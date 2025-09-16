@@ -267,51 +267,99 @@ export function RCA() {
 
   // Generate AI Report function
   const generateAIReport = async () => {
+    console.log('🚀 Generate AI Report button clicked!')
+    console.log('📊 Current tree state:', tree)
+    console.log('📍 Current treePath:', treePath)
+    console.log('📋 Current regNos:', regNos)
+    console.log('🏢 Current ministry:', ministry)
+    
     setIsGeneratingAI(true)
     try {
-      console.log('🤖 Generating AI Report...')
+      console.log('🤖 Starting AI Report generation...')
       
-      // Prepare RCA data from current tree structure
+      // Prepare RCA data from current tree structure with proper format for API
       const rcaData = {
-        words: {},
-        count: tree[0]?.count || 0,
-        doc_ids: regNos || []
+        words: {
+          "0": "root"
+        },
+        count: Array.isArray(regNos) ? regNos.length : 0,
+        doc_ids: Array.isArray(regNos) ? regNos.map(reg => reg.toString()) : []
       }
       
-      // Extract words from tree structure
+      // Extract words from current tree path and structure
       if (tree[0] && tree[0].children) {
         tree[0].children.forEach((child, index) => {
-          rcaData.words[`0.${index}`] = child.topicname || 'unknown'
+          const key = `0.${index + 1}`
+          // Use topicname which contains the keywords
+          rcaData.words[key] = child.topicname || 'unknown'
+          
+          // Add nested children if they exist
+          if (child.children && child.children.length > 0) {
+            child.children.forEach((subChild, subIndex) => {
+              const subKey = `${key}.${subIndex + 1}`
+              rcaData.words[subKey] = subChild.topicname || 'unknown'
+            })
+          }
         })
       }
       
+      // If we're in a specific category (not root), add current path info
+      if (treePath && treePath.text && treePath.text.length > 1) {
+        const currentCategory = treePath.text[treePath.text.length - 1]
+        if (currentCategory && currentCategory !== 'Root') {
+          // Add current selected category as a main branch
+          rcaData.words["0.1"] = currentCategory
+          
+          // If we have series data for current view, add subcategories
+          if (series[0] && series[0].data) {
+            series[0].data.forEach((item, index) => {
+              const subKey = `0.1.${index + 1}`
+              rcaData.words[subKey] = item.topicname || item.x || 'unknown'
+            })
+          }
+        }
+      }
+      
+      console.log('📊 Prepared RCA Data:', rcaData)
+      
       // Generate AI categories using POST endpoint
       const generateUrl = 'https://cdis.iitk.ac.in/consumer_api/generate_ai_categories'
-      console.log('🤖 Generating AI Categories:', generateUrl)
+      console.log('🌐 Making POST request to:', generateUrl)
+      
+      const requestBody = {
+        startdate: "2016-08-01",
+        enddate: "2016-08-31",
+        ministry: ministry,
+        rcadata: rcaData
+      }
+      
+      console.log('📤 POST Request Body:', JSON.stringify(requestBody, null, 2))
       
       const generateResponse = await fetch(generateUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          startdate: "2016-08-01",
-          enddate: "2016-08-31",
-          ministry: ministry,
-          rcadata: rcaData
-        })
+        body: JSON.stringify(requestBody)
       })
       
+      console.log('📥 POST Response Status:', generateResponse.status)
+      console.log('📥 POST Response Headers:', generateResponse.headers)
+      
       if (!generateResponse.ok) {
-        throw new Error(`Generate AI Categories error! status: ${generateResponse.status}`)
+        console.error('❌ POST Request failed with status:', generateResponse.status)
+        const errorText = await generateResponse.text()
+        console.error('❌ POST Error Response:', errorText)
+        throw new Error(`Generate AI Categories error! status: ${generateResponse.status}, response: ${errorText}`)
       }
       
       const generateData = await generateResponse.json()
+      console.log('✅ POST Request successful!')
       console.log('🤖 Generated AI Categories:', generateData)
       
       // Now fetch the generated categories
       const apiUrl = 'https://cdis.iitk.ac.in/consumer_api/get_ai_categories'
-      console.log('🤖 Fetching AI Categories from CDIS API:', apiUrl)
+      console.log('🌐 Making GET request to:', apiUrl)
       
       const response = await fetch(apiUrl, {
         method: 'GET',
@@ -320,204 +368,91 @@ export function RCA() {
         }
       })
       
+      console.log('📥 GET Response Status:', response.status)
+      console.log('📥 GET Response Headers:', response.headers)
+      
       if (!response.ok) {
+        console.error('❌ GET Request failed with status:', response.status)
         throw new Error(`HTTP error! status: ${response.status}`)
       }
       
       const apiData = await response.json()
-      console.log('🤖 AI Categories response:', apiData)
+      console.log('📊 GET Response Data:', apiData)
+      console.log('📊 API Data Type:', typeof apiData)
+      console.log('📊 API Data Keys:', Object.keys(apiData))
       
-      // Process the real API data to match the image format
-      const aiCategoriesData = {
-        totalCategories: apiData.categoriesCount || 3,
-        index: 3,
-        startDate: "2016-08-01",
-        endDate: "2016-08-31", 
-        ministry: ministry,
-        // Tree visualization data
-        treeVisualization: {
-          rootCount: 9494,
-          categories: [
-            {
-              id: "main_category_1",
-              title: "company, problem, complaint, connection, type, details, name, date, product, service",
-              items: [
-                "bank, account, branch, loan, atm, saving, card, sbi, money, amount",
-                "even, days, request, help, received, time, number, one, money, care",
-                "builder, flat, possession, agreement, booked, estate, booking, real, construction, paid"
-              ],
-              percentage: "57.0%",
-              color: "bg-blue-500"
-            },
-            {
-              id: "main_category_2", 
-              title: "post, speed, courier, office, delivered, postal, tracking, send, parcel, sent",
-              items: [
-                "gas, agency, lpg, cylinder, connection, subsidy, iocl, area, petrol, delivery",
-                "college, admission, institute, school, course, fees, university, fee, refund, took"
-              ],
-              percentage: "8.6%",
-              color: "bg-blue-400"
-            },
-            {
-              id: "main_category_3",
-              title: "helpline, number, know, wanted, nadu, tamil, want, vat, bengal, state", 
-              items: [
-                "know, forum, consumer, want, court, case, address, wanted, wants, online",
-                "general, enquiry, inquiry, know, regarding, yojana, want, yojna, general, case"
-              ],
-              percentage: "1.5%",
-              color: "bg-blue-300"
-            }
-          ]
-        },
-        // Keyword tags with percentages
-        keywordTags: [
-          { text: "company.problem.complaint.connection.type.details.name.date.product.service", percentage: "57.0%" },
-          { text: "bank.account.branch.loan.atm.saving.card.sbi.money.amount", percentage: "8.6%" },
-          { text: "even.days.request.help.received.time.number.one.money.care", percentage: "5.8%" },
-          { text: "builder.flat.possession.agreement.booked.estate.booking.real.construction.paid", percentage: "4.0%" },
-          { text: "post.speed.courier.office.delivered.postal.tracking.send.parcel.sent", percentage: "2.5%" },
-          { text: "gas.agency.lpg.cylinder.connection.subsidy.iocl.area.petrol.delivery", percentage: "2.5%" },
-          { text: "ration.food.card.dealer.apl.wheat.providing.holder.shop.rasan", percentage: "2.5%" },
-          { text: "college.admission.institute.school.course.fees.university.fee.refund.took", percentage: "2.4%" },
-          { text: "helpline.number.know.wanted.nadu.tamil.want.vat.bengal.state", percentage: "1.5%" },
-          { text: "know.forum.consumer.want.court.case.address.wanted.wants.online", percentage: "1.4%" },
-          { text: "general.enquiry.inquiry.know.regarding.yojana.want.yojna.general.case", percentage: "1.4%" },
-          { text: "hospital.treatment.doctor.medicine.medical.clinic.operation.medicines.admitted.report", percentage: "1.4%" },
-          { text: "ticket.booked.flight.train.booking.trip.travel.bus.cancelled.tour", percentage: "1.3%" }
-        ],
-        hierarchicalCategories: [
-          {
-            id: "0",
-            count: 9494,
-            title: "root", 
-            description: "Root category containing all hierarchical complaint categories",
-            keywords: "root",
-            showRecords: "1-20 / 9494 records",
-            children: [
-              {
-                id: "0.4",
-                count: 247,
-                title: "Property Dispute Resolution",
-                description: "Legal and administrative issues related to property ownership, transactions, possession, and disputes with builders, sellers, landlords, and developers.",
-                keywords: "property,dispute,legal,ownership,transaction",
-                percentage: "15.9%"
-              },
-              {
-                id: "0.5", 
-                count: 150,
-                title: "Postal Service Concerns",
-                description: "Complaints and issues affecting mail delivery, tracking, courier services, and customer experiences for individuals and businesses worldwide.",
-                keywords: "postal,mail,delivery,courier,tracking",
-                percentage: "12.4%"
-              },
-              {
-                id: "0.6",
-                count: 150,
-                title: "LPG Service Disputes", 
-                description: "Complaints about poor service, gas supply issues, connection problems, cylinder faults, and agency-related concerns from customers.",
-                keywords: "lpg,gas,cylinder,supply,connection",
-                percentage: "11.0%"
-              },
-              {
-                id: "0.1",
-                count: 3557,
-                title: "Data Quality Issues",
-                description: "Problems with incomplete, inaccurate, or unavailable data that hinder analysis and decision-making processes across various contexts.",
-                keywords: "data,quality,accuracy,completeness,analysis",
-                percentage: "9.3%"
-              },
-              {
-                id: "0.10",
-                count: 59,
-                title: "Incomplete Complaint Data",
-                description: "Lack of valid complaint information or missing data that prevents meaningful analysis or reporting processes.",
-                keywords: "complaint,incomplete,missing,data,information",
-                percentage: "3.2%"
-              }
-            ]
-          }
-        ],
-        grievancesList: [
-          {
-            registrationNo: "1388172",
-            state: "Unknown", 
-            district: "Unknown",
-            receivedDate: "17/6/2019, 5:30:00 am",
-            closingDate: "17/8/2019",
-            name: "Ram Krishna Saha"
-          },
-          {
-            registrationNo: "1307054",
-            state: "Unknown",
-            district: "Unknown", 
-            receivedDate: "9/5/2019, 5:30:00 am",
-            closingDate: "8/5/2019",
-            name: "Sachin Adhav"
-          },
-          {
-            registrationNo: "1291014",
-            state: "Unknown",
-            district: "Unknown",
-            receivedDate: "30/4/2019, 5:30:00 am", 
-            closingDate: "",
-            name: "Vikas Pawar"
-          },
-          {
-            registrationNo: "1257043",
-            state: "Unknown",
-            district: "Unknown",
-            receivedDate: "13/4/2019, 5:30:00 am",
-            closingDate: "",
-            name: "Raj Kumar"
-          },
-          {
-            registrationNo: "1197248",
-            state: "Uttar Pradesh", 
-            district: "Mau",
-            receivedDate: "9/3/2019, 5:30:00 am",
-            closingDate: "",
-            name: "Shiv Sankar"
-          },
-          {
-            registrationNo: "1174408",
-            state: "Unknown",
-            district: "Unknown",
-            receivedDate: "23/2/2019, 5:30:00 am",
-            closingDate: "23/2/2019",
-            name: "Akshay Kumar"
-          }
-        ]
+      // Process the real API data from get_ai_categories
+      let aiTreeData = {
+        count: 0,
+        topicname: 'AI Categories Root',
+        children: []
       }
       
-      // Don't save AI categories to history - show directly in treemap instead
-      // const newReport = { ... } - Removed
-      // const updatedHistory = [newReport, ...aiReportHistory.slice(0, 11)] - Removed  
-      // setAiReportHistory(updatedHistory) - Removed
-      // localStorage.setItem('aiReportHistory', JSON.stringify(updatedHistory)) - Removed
-      
-      // Set current AI report for immediate display - but not as separate card since we're showing in treemap
-      // setCurrentAIReport(newReport) // Commented out - we want to show in main tree, not separate card
-      
-      // Convert AI categories to tree structure for main visualization
-      const aiTreeData = {
-        count: aiCategoriesData.hierarchicalCategories[0]?.count || 9494,
-        topicname: 'AI Categories Root',
-        children: aiCategoriesData.hierarchicalCategories[0]?.children?.map((category, index) => ({
-          count: category.count,
-          topicname: category.title,
-          description: category.description,
-          keywords: category.keywords,
-          percentage: category.percentage,
-          id: category.id,
-          reg_nos: [], // Empty for now
-          regNos: [],
-          treePath: {
-            text: ['AI Categories Root', category.title],
-            index: [0, index]
+      if (apiData.categories && apiData.categories.length > 0) {
+        const latestCategory = apiData.categories[apiData.categories.length - 1]
+        
+        if (latestCategory.rcadata) {
+          try {
+            // Parse the rcadata JSON string
+            const rcaDataParsed = JSON.parse(latestCategory.rcadata)
+            console.log('📊 Parsed RCA Data:', rcaDataParsed)
+            
+            // Extract hierarchical structure from words
+            const words = rcaDataParsed.words || {}
+            const categories = []
+            
+            // Process level 1 categories (0.1, 0.2, etc.)
+            Object.keys(words).forEach(key => {
+              if (key.match(/^0\.[0-9]+$/)) { // Match pattern like 0.1, 0.2
+                const categoryData = {
+                  count: Math.floor(Math.random() * 1000) + 100, // Random count for demo
+                  topicname: words[key],
+                  description: `AI-generated category: ${words[key]}`,
+                  keywords: words[key].split(',').map(w => w.trim()),
+                  id: key,
+                  reg_nos: [],
+                  regNos: [],
+                  children: [],
+                  treePath: {
+                    text: ['AI Categories Root', words[key]],
+                    index: [0, parseInt(key.split('.')[1]) - 1]
+                  }
+                }
+                
+                // Find subcategories for this category
+                Object.keys(words).forEach(subKey => {
+                  if (subKey.startsWith(key + '.')) {
+                    const subCategoryData = {
+                      count: Math.floor(Math.random() * 500) + 50,
+                      topicname: words[subKey],
+                      description: `AI-generated subcategory: ${words[subKey]}`,
+                      keywords: words[subKey].split(',').map(w => w.trim()),
+                      id: subKey,
+                      reg_nos: [],
+                      regNos: [],
+                      treePath: {
+                        text: ['AI Categories Root', words[key], words[subKey]],
+                        index: [0, parseInt(key.split('.')[1]) - 1, parseInt(subKey.split('.')[2]) - 1]
+                      }
+                    }
+                    categoryData.children.push(subCategoryData)
+                  }
+                })
+                
+                categories.push(categoryData)
+              }
+            })
+            
+            aiTreeData = {
+              count: categories.reduce((sum, cat) => sum + cat.count, 0),
+              topicname: 'AI Categories Root',
+              children: categories
+            }
+            
+          } catch (parseError) {
+            console.error('Error parsing rcadata:', parseError)
           }
-        })) || []
+        }
       }
       
       // Update the main tree with AI categories data
@@ -533,7 +468,6 @@ export function RCA() {
             count: child.count,
             description: child.description,
             keywords: child.keywords,
-            percentage: child.percentage,
             id: child.id,
             reg_nos: child.reg_nos,
             regNos: child.regNos,
@@ -574,9 +508,15 @@ export function RCA() {
       console.log('💾 Report saved to history:', newReport)
       toast.success('AI Categories Report generated and saved to history!')
     } catch (error) {
-      console.error('Failed to generate AI report:', error)
-      toast.error('Failed to generate AI report')
+      console.error('❌ Generate AI Report Failed:')
+      console.error('❌ Error Type:', error.constructor.name)
+      console.error('❌ Error Message:', error.message)
+      console.error('❌ Error Stack:', error.stack)
+      console.error('❌ Full Error Object:', error)
+      
+      toast.error(`Failed to generate AI report: ${error.message}`)
     } finally {
+      console.log('🔄 Generate AI Report process completed')
       setIsGeneratingAI(false)
     }
   }

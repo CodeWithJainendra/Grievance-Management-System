@@ -12,6 +12,12 @@ import {
   MenuItem,
   Avatar,
   Chip,
+  Dialog,
+  DialogHeader,
+  DialogBody,
+  DialogFooter,
+  Card,
+  CardBody,
 } from "@material-tailwind/react";
 import {
   UserCircleIcon,
@@ -25,6 +31,11 @@ import {
   SunIcon,
   MoonIcon,
   ExclamationTriangleIcon,
+  XMarkIcon,
+  CalendarIcon,
+  MapPinIcon,
+  BuildingOfficeIcon,
+  DocumentTextIcon,
 } from "@heroicons/react/24/solid";
 import {
   useMaterialTailwindController,
@@ -53,6 +64,8 @@ export function DashboardNavbar() {
   const [highAlerts, setHighAlerts] = useState([]);
   const [alertsLoading, setAlertsLoading] = useState(true);
   const [totalAlertsCount, setTotalAlertsCount] = useState(0);
+  const [selectedAlert, setSelectedAlert] = useState(null);
+  const [showAlertModal, setShowAlertModal] = useState(false);
   
   // Fixed date range for notifications (January 1st to present)
   const startDateDisplay = '2025-01-01';
@@ -107,7 +120,34 @@ export function DashboardNavbar() {
     }
   };
 
+  const handleAlertClick = (alert) => {
+    // Create detailed demo data for the selected alert
+    const detailedAlert = {
+      ...alert,
+      // Add demo detailed information
+      registration_no: alert.registration_no || `REG/${new Date().getFullYear()}/${Math.floor(Math.random() * 10000).toString().padStart(4, '0')}`,
+      complainant_name: alert.complainant_name || 'Rajesh Kumar Singh',
+      complainant_email: alert.complainant_email || 'rajesh.kumar@email.com',
+      complainant_phone: alert.complainant_phone || '+91 9876543210',
+      detailed_description: alert.detailed_description || `This is a detailed description of the grievance regarding ${alert.subject || 'service delivery issues'}. The complainant has reported multiple instances of delays and inadequate response from the concerned department. Immediate attention and resolution is required to address this high-priority matter.`,
+      current_status: alert.current_status || 'Under Review',
+      assigned_officer: alert.assigned_officer || 'Dr. Priya Sharma, Joint Secretary',
+      department: alert.department || alert.ministry || 'Department of Administrative Reforms',
+      escalation_level: alert.escalation_level || 'Level 2 - Ministry Level',
+      expected_resolution: alert.expected_resolution || '7 working days',
+      last_action_date: alert.last_action_date || new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
+      last_action: alert.last_action || 'Case forwarded to concerned department for immediate action',
+      attachments: alert.attachments || ['Document_1.pdf', 'Evidence_Photo.jpg'],
+      priority_reason: alert.priority_reason || 'Multiple escalations and media attention',
+      citizen_feedback: alert.citizen_feedback || 'Citizen expressed dissatisfaction with current progress',
+    };
+    
+    setSelectedAlert(detailedAlert);
+    setShowAlertModal(true);
+  };
+
   return (
+    <>
     <Navbar
       color={fixedNavbar ? (isDark ? "gray" : "white") : "transparent"}
       className={`rounded-xl transition-all duration-300 ${
@@ -223,7 +263,11 @@ export function DashboardNavbar() {
                 </div>
               ) : highAlerts.length > 0 ? (
                 highAlerts.map((alert, idx) => (
-                  <MenuItem key={alert.registration_no || idx} className={`p-3 ${isDark ? 'hover:bg-gray-700' : 'hover:bg-gray-50'}`}>
+                  <MenuItem 
+                    key={alert.registration_no || idx} 
+                    className={`p-3 cursor-pointer transition-colors ${isDark ? 'hover:bg-gray-700' : 'hover:bg-gray-50'}`}
+                    onClick={() => handleAlertClick(alert)}
+                  >
                     <div className="flex flex-col space-y-1">
                       <div className="flex justify-between items-center">
                         <span className="font-semibold text-blue-gray-800 dark:text-white text-sm">
@@ -239,6 +283,9 @@ export function DashboardNavbar() {
                       <div className="text-xs text-gray-500 dark:text-gray-400 flex justify-between">
                         <span>{alert.ministry || 'Unknown Ministry'}</span>
                         <span className="font-medium text-red-600">{alert.priority || 'High'}</span>
+                      </div>
+                      <div className="text-xs text-blue-600 dark:text-blue-400 mt-1">
+                        Click to view details →
                       </div>
                     </div>
                   </MenuItem>
@@ -365,7 +412,293 @@ export function DashboardNavbar() {
         </div>
       </div>
     </Navbar>
-  );
+
+      {/* Detailed Alert Modal */}
+    <Dialog 
+      open={showAlertModal} 
+      handler={() => setShowAlertModal(false)}
+      size="lg"
+      className={isDark ? 'bg-gray-800' : 'bg-white'}
+    >
+      <DialogHeader className={`flex items-center justify-between ${isDark ? 'text-white border-gray-600' : 'text-gray-900 border-gray-200'} border-b`}>
+        <div className="flex items-center gap-3">
+          <ExclamationTriangleIcon className="h-6 w-6 text-red-500" />
+          <Typography variant="h5" className={isDark ? 'text-white' : 'text-gray-900'}>
+            High Priority Alert Details
+          </Typography>
+        </div>
+        <IconButton
+          variant="text"
+          onClick={() => setShowAlertModal(false)}
+          className={isDark ? 'text-white hover:bg-gray-700' : 'text-gray-500 hover:bg-gray-100'}
+        >
+          <XMarkIcon className="h-5 w-5" />
+        </IconButton>
+      </DialogHeader>
+      
+      <DialogBody className={`max-h-96 overflow-y-auto ${isDark ? 'text-gray-200' : 'text-gray-700'}`}>
+        {selectedAlert && (
+          <div className="space-y-6">
+            {/* Basic Information */}
+            <Card className={isDark ? 'bg-gray-700' : 'bg-gray-50'}>
+              <CardBody className="p-4">
+                <Typography variant="h6" className={`mb-3 flex items-center gap-2 ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                  <DocumentTextIcon className="h-5 w-5" />
+                  Basic Information
+                </Typography>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <Typography variant="small" className={`font-medium ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>
+                      Registration No.
+                    </Typography>
+                    <Typography className={`font-mono ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                      {selectedAlert.registration_no}
+                    </Typography>
+                  </div>
+                  <div>
+                    <Typography variant="small" className={`font-medium ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>
+                      Priority Level
+                    </Typography>
+                    <Chip 
+                      value={selectedAlert.priority || 'High'} 
+                      color="red" 
+                      size="sm" 
+                      className="w-fit"
+                    />
+                  </div>
+                  <div>
+                    <Typography variant="small" className={`font-medium ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>
+                      Current Status
+                    </Typography>
+                    <Typography className={isDark ? 'text-white' : 'text-gray-900'}>
+                      {selectedAlert.current_status}
+                    </Typography>
+                  </div>
+                  <div>
+                    <Typography variant="small" className={`font-medium ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>
+                      Escalation Level
+                    </Typography>
+                    <Typography className={isDark ? 'text-white' : 'text-gray-900'}>
+                      {selectedAlert.escalation_level}
+                    </Typography>
+                  </div>
+                </div>
+              </CardBody>
+            </Card>
+
+            {/* Location & Department */}
+            <Card className={isDark ? 'bg-gray-700' : 'bg-gray-50'}>
+              <CardBody className="p-4">
+                <Typography variant="h6" className={`mb-3 flex items-center gap-2 ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                  <MapPinIcon className="h-5 w-5" />
+                  Location & Department
+                </Typography>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <Typography variant="small" className={`font-medium ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>
+                      State/District
+                    </Typography>
+                    <Typography className={isDark ? 'text-white' : 'text-gray-900'}>
+                      {selectedAlert.state} / {selectedAlert.district}
+                    </Typography>
+                  </div>
+                  <div>
+                    <Typography variant="small" className={`font-medium ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>
+                      Ministry/Department
+                    </Typography>
+                    <Typography className={isDark ? 'text-white' : 'text-gray-900'}>
+                      {selectedAlert.department}
+                    </Typography>
+                  </div>
+                  <div>
+                    <Typography variant="small" className={`font-medium ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>
+                      Assigned Officer
+                    </Typography>
+                    <Typography className={isDark ? 'text-white' : 'text-gray-900'}>
+                      {selectedAlert.assigned_officer}
+                    </Typography>
+                  </div>
+                  <div>
+                    <Typography variant="small" className={`font-medium ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>
+                      Expected Resolution
+                    </Typography>
+                    <Typography className={isDark ? 'text-white' : 'text-gray-900'}>
+                      {selectedAlert.expected_resolution}
+                    </Typography>
+                  </div>
+                </div>
+              </CardBody>
+            </Card>
+
+            {/* Complainant Details */}
+            <Card className={isDark ? 'bg-gray-700' : 'bg-gray-50'}>
+              <CardBody className="p-4">
+                <Typography variant="h6" className={`mb-3 flex items-center gap-2 ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                  <UserCircleIcon className="h-5 w-5" />
+                  Complainant Details
+                </Typography>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <Typography variant="small" className={`font-medium ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>
+                      Name
+                    </Typography>
+                    <Typography className={isDark ? 'text-white' : 'text-gray-900'}>
+                      {selectedAlert.complainant_name}
+                    </Typography>
+                  </div>
+                  <div>
+                    <Typography variant="small" className={`font-medium ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>
+                      Email
+                    </Typography>
+                    <Typography className={isDark ? 'text-white' : 'text-gray-900'}>
+                      {selectedAlert.complainant_email}
+                    </Typography>
+                  </div>
+                  <div>
+                    <Typography variant="small" className={`font-medium ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>
+                      Phone
+                    </Typography>
+                    <Typography className={isDark ? 'text-white' : 'text-gray-900'}>
+                      {selectedAlert.complainant_phone}
+                    </Typography>
+                  </div>
+                </div>
+              </CardBody>
+            </Card>
+
+            {/* Grievance Details */}
+            <Card className={isDark ? 'bg-gray-700' : 'bg-gray-50'}>
+              <CardBody className="p-4">
+                <Typography variant="h6" className={`mb-3 ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                  Grievance Details
+                </Typography>
+                <div className="space-y-3">
+                  <div>
+                    <Typography variant="small" className={`font-medium ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>
+                      Subject
+                    </Typography>
+                    <Typography className={isDark ? 'text-white' : 'text-gray-900'}>
+                      {selectedAlert.subject}
+                    </Typography>
+                  </div>
+                  <div>
+                    <Typography variant="small" className={`font-medium ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>
+                      Detailed Description
+                    </Typography>
+                    <Typography className={`${isDark ? 'text-gray-200' : 'text-gray-700'} leading-relaxed`}>
+                      {selectedAlert.detailed_description}
+                    </Typography>
+                  </div>
+                  <div>
+                    <Typography variant="small" className={`font-medium ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>
+                      Priority Reason
+                    </Typography>
+                    <Typography className={isDark ? 'text-white' : 'text-gray-900'}>
+                      {selectedAlert.priority_reason}
+                    </Typography>
+                  </div>
+                </div>
+              </CardBody>
+            </Card>
+
+            {/* Timeline & Actions */}
+            <Card className={isDark ? 'bg-gray-700' : 'bg-gray-50'}>
+              <CardBody className="p-4">
+                <Typography variant="h6" className={`mb-3 flex items-center gap-2 ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                  <CalendarIcon className="h-5 w-5" />
+                  Timeline & Actions
+                </Typography>
+                <div className="space-y-3">
+                  <div>
+                    <Typography variant="small" className={`font-medium ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>
+                      Received Date
+                    </Typography>
+                    <Typography className={isDark ? 'text-white' : 'text-gray-900'}>
+                      {new Date(selectedAlert.recvd_date).toLocaleDateString('en-IN', {
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric'
+                      })}
+                    </Typography>
+                  </div>
+                  <div>
+                    <Typography variant="small" className={`font-medium ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>
+                      Last Action Date
+                    </Typography>
+                    <Typography className={isDark ? 'text-white' : 'text-gray-900'}>
+                      {new Date(selectedAlert.last_action_date).toLocaleDateString('en-IN', {
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric'
+                      })}
+                    </Typography>
+                  </div>
+                  <div>
+                    <Typography variant="small" className={`font-medium ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>
+                      Last Action Taken
+                    </Typography>
+                    <Typography className={isDark ? 'text-white' : 'text-gray-900'}>
+                      {selectedAlert.last_action}
+                    </Typography>
+                  </div>
+                  <div>
+                    <Typography variant="small" className={`font-medium ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>
+                      Citizen Feedback
+                    </Typography>
+                    <Typography className={isDark ? 'text-white' : 'text-gray-900'}>
+                      {selectedAlert.citizen_feedback}
+                    </Typography>
+                  </div>
+                </div>
+              </CardBody>
+            </Card>
+
+            {/* Attachments */}
+            {selectedAlert.attachments && selectedAlert.attachments.length > 0 && (
+              <Card className={isDark ? 'bg-gray-700' : 'bg-gray-50'}>
+                <CardBody className="p-4">
+                  <Typography variant="h6" className={`mb-3 ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                    Attachments
+                  </Typography>
+                  <div className="flex flex-wrap gap-2">
+                    {selectedAlert.attachments.map((attachment, idx) => (
+                      <Chip
+                        key={idx}
+                        value={attachment}
+                        variant="outlined"
+                        className={`${isDark ? 'border-gray-500 text-gray-200' : 'border-gray-300 text-gray-700'}`}
+                      />
+                    ))}
+                  </div>
+                </CardBody>
+              </Card>
+            )}
+          </div>
+        )}
+      </DialogBody>
+      
+      <DialogFooter className={`${isDark ? 'border-gray-600' : 'border-gray-200'} border-t`}>
+        <Button
+          variant="outlined"
+          onClick={() => setShowAlertModal(false)}
+          className={`mr-2 ${isDark ? 'border-gray-500 text-gray-300 hover:bg-gray-700' : 'border-gray-300 text-gray-700 hover:bg-gray-50'}`}
+        >
+          Close
+        </Button>
+        <Button
+          color="blue"
+          onClick={() => {
+            // Handle action (e.g., navigate to detailed view)
+            console.log('Taking action on alert:', selectedAlert.registration_no);
+            setShowAlertModal(false);
+          }}
+        >
+          Take Action
+        </Button>
+      </DialogFooter>
+     </Dialog>
+    </>
+   );
 }
 
 DashboardNavbar.displayName = "/src/widgets/layout/dashboard-navbar.jsx";

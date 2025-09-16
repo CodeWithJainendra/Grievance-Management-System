@@ -62,9 +62,7 @@ export const getCategorySearch = async (filters) => {
     }
 }
 
-export const getSemanticRca = (filters = {}) => {
-    return httpService.auth.post('/semantic_rca/', filters)
-}
+
 
 export const getDynamicRca = (filters = {}) => {
     return httpService.auth.post('dynamicrca', {}, {

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { getDynamicRca, getGrievancesUsingRegNos, getSemanticRca } from '@/services/rca';
+import { getDynamicRca, getGrievancesUsingRegNos } from '@/services/rca';
 import { BreadCrumbs, Chart } from './CategoricalTree';
 import { AILoader, GrievanceListBox } from '@/widgets/grievance/RCA/semantic';
 import { Filters, getDefaultDepartmentOrFiller } from '@/widgets/grievance/RCA/dynamic';

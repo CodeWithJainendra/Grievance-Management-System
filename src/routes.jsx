@@ -24,7 +24,7 @@ import { GraphicalAnalysis } from "./pages/dashboard/GraphicalAnalysis";
 import { SpatialSearch } from "./pages/dashboard/SpatialSearch";
 import CategorySearch from "./pages/dashboard/CategorySearch";
 import { RedressalFlagging } from "./pages/dashboard/RedressalFlagging";
-import SemanticRCA from "./pages/dashboard/semanticRCA";
+
 import DynamicRCA from "./pages/dashboard/DynamicRCA";
 import { ElectronIcon } from "./widgets/grievance/svg/electron";
 import ReportHome from "./pages/dashboard/ReportHome";
@@ -99,12 +99,7 @@ export const routes = [
         element: <RealTimeRCA />,
       },
 
-      {
-        icon: <RectangleGroupIcon {...icon} />,
-        name: "Semantic RCA",
-        path: "/semanticRCA",
-        element: <SemanticRCA />,
-      },
+
 
       ...extraRoutes
 
