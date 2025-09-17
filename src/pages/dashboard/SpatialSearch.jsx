@@ -110,21 +110,23 @@ export const SpatialSearch = () => {
                         </div>
                     </div>
 
-                    {/* Filters Grid */}
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-                        {/* Date Range */}
-                        <div>
+                    {/* Filters Grid - Enhanced Layout for Date Picker */}
+                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 mb-6">
+                        {/* Date Range - Wider Column */}
+                        <div className="lg:col-span-5">
                             <Typography variant="small" color="gray" className="font-semibold mb-2 text-gray-800">
                                 Date Range
                             </Typography>
                             <Typography variant="small" color="gray" className="text-xs text-gray-600 mb-3">
                                 Note: CDIS data is available from 2016-2024.
                             </Typography>
-                            <SpatialDateRangeInput />
+                            <div className="relative z-50">
+                                <SpatialDateRangeInput />
+                            </div>
                         </div>
 
                         {/* Ministry */}
-                        <div>
+                        <div className="lg:col-span-3">
                             <Typography variant="small" color="gray" className="font-semibold mb-2 text-gray-800">
                                 Ministry
                             </Typography>
@@ -134,7 +136,7 @@ export const SpatialSearch = () => {
                         </div>
 
                         {/* State/District */}
-                        <div>
+                        <div className="lg:col-span-4">
                             <Typography variant="small" color="gray" className="font-semibold mb-2 text-gray-800">
                                 State / District
                             </Typography>
@@ -1063,8 +1065,8 @@ const SpatialDateRangeInput = () => {
     }
 
     return (
-        <div className="w-full relative z-[9999]">
-            <div className={`border rounded-lg shadow-lg ${
+        <div className="w-full relative z-[9999] min-h-[400px]">
+            <div className={`border rounded-lg shadow-lg overflow-visible ${
                 isDark ? 'bg-gray-800 border-gray-600' : 'bg-white border-gray-300'
             }`}>
                 <DateRangePicker
@@ -1076,7 +1078,7 @@ const SpatialDateRangeInput = () => {
                     className={`w-full p-3 border-0 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
                         isDark ? 'bg-gray-800 text-white' : 'bg-white text-gray-700'
                     }`}
-                    containerClassName="w-full"
+                    containerClassName="w-full overflow-visible"
                     inputClassName={`w-full p-3 text-sm border-0 rounded-lg focus:outline-none ${
                         isDark ? 'bg-gray-800 text-white placeholder-gray-400' : 'bg-white text-gray-700 placeholder-gray-500'
                     }`}
@@ -1096,6 +1098,12 @@ const SpatialDateRangeInput = () => {
                     border-radius: 8px !important;
                     box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05) !important;
                     z-index: 9999 !important;
+                    position: absolute !important;
+                    top: 100% !important;
+                    left: 0 !important;
+                    width: 100% !important;
+                    min-width: 600px !important;
+                    overflow: visible !important;
                 }
                 .react-datepicker__header {
                     background-color: ${isDark ? '#374151' : '#f9fafb'} !important;
