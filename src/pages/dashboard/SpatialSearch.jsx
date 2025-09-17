@@ -110,10 +110,10 @@ export const SpatialSearch = () => {
                         </div>
                     </div>
 
-                    {/* Filters Grid - Enhanced Layout for Date Picker */}
-                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 mb-6">
-                        {/* Date Range - Wider Column */}
-                        <div className="lg:col-span-5">
+                    {/* Filters Grid */}
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                        {/* Date Range */}
+                        <div>
                             <Typography variant="small" color="gray" className="font-semibold mb-2 text-gray-800">
                                 Date Range
                             </Typography>
@@ -126,7 +126,7 @@ export const SpatialSearch = () => {
                         </div>
 
                         {/* Ministry */}
-                        <div className="lg:col-span-3">
+                        <div>
                             <Typography variant="small" color="gray" className="font-semibold mb-2 text-gray-800">
                                 Ministry
                             </Typography>
@@ -136,7 +136,7 @@ export const SpatialSearch = () => {
                         </div>
 
                         {/* State/District */}
-                        <div className="lg:col-span-4">
+                        <div>
                             <Typography variant="small" color="gray" className="font-semibold mb-2 text-gray-800">
                                 State / District
                             </Typography>
