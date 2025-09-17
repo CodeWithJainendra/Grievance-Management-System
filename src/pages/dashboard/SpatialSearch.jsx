@@ -259,7 +259,7 @@ export const SpatialSearch = () => {
             {/* Map Modal */}
             {showMapModal && (
                 <div className="fixed inset-0 bg-black bg-opacity-50 z-[9999] flex items-center justify-center p-4">
-                    <div className="bg-white rounded-xl shadow-2xl w-full max-w-6xl h-[80vh] flex flex-col">
+                    <div className="bg-white rounded-xl shadow-2xl w-full max-w-7xl h-[90vh] flex flex-col">
                         <div className="flex items-center justify-between p-4 border-b">
                             <div className="flex items-center gap-3">
                                 <div className="p-2 rounded-lg bg-blue-100">
