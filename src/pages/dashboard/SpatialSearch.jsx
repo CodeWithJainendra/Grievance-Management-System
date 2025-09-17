@@ -1134,6 +1134,61 @@ const SpatialDateRangeInput = () => {
                 .react-datepicker-popper {
                     z-index: 9999 !important;
                 }
+                
+                /* Scrollable Shortcuts Styling */
+                .react-datepicker__shortcuts {
+                    max-height: 300px !important;
+                    overflow-y: auto !important;
+                    padding: 8px !important;
+                    background-color: ${isDark ? '#1f2937' : '#ffffff'} !important;
+                    border-right: 1px solid ${isDark ? '#4b5563' : '#e5e7eb'} !important;
+                    scrollbar-width: thin !important;
+                    scrollbar-color: ${isDark ? '#4b5563 #1f2937' : '#d1d5db #ffffff'} !important;
+                }
+                
+                .react-datepicker__shortcuts::-webkit-scrollbar {
+                    width: 6px !important;
+                }
+                
+                .react-datepicker__shortcuts::-webkit-scrollbar-track {
+                    background: ${isDark ? '#1f2937' : '#f9fafb'} !important;
+                    border-radius: 3px !important;
+                }
+                
+                .react-datepicker__shortcuts::-webkit-scrollbar-thumb {
+                    background: ${isDark ? '#4b5563' : '#d1d5db'} !important;
+                    border-radius: 3px !important;
+                }
+                
+                .react-datepicker__shortcuts::-webkit-scrollbar-thumb:hover {
+                    background: ${isDark ? '#6b7280' : '#9ca3af'} !important;
+                }
+                
+                .react-datepicker__shortcut {
+                    padding: 8px 12px !important;
+                    margin: 2px 0 !important;
+                    border-radius: 6px !important;
+                    cursor: pointer !important;
+                    transition: all 0.2s ease !important;
+                    color: ${isDark ? '#d1d5db' : '#374151'} !important;
+                    font-size: 14px !important;
+                    white-space: nowrap !important;
+                }
+                
+                .react-datepicker__shortcut:hover {
+                    background-color: ${isDark ? '#374151' : '#f3f4f6'} !important;
+                    color: ${isDark ? '#ffffff' : '#111827'} !important;
+                }
+                
+                .react-datepicker__shortcut--selected {
+                    background-color: #3b82f6 !important;
+                    color: white !important;
+                }
+                
+                .react-datepicker__shortcuts-container {
+                    min-width: 180px !important;
+                    max-width: 200px !important;
+                }
             `}</style>
         </div>
     )
