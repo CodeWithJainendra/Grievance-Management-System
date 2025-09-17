@@ -1098,6 +1098,13 @@ const SpatialDateRangeInput = () => {
                     border-radius: 8px !important;
                     box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05) !important;
                     z-index: 9999 !important;
+                    position: fixed !important;
+                    top: auto !important;
+                    bottom: 5px !important;
+                    left: 50% !important;
+                    transform: translateX(-50%) !important;
+                    width: 600px !important;
+                    max-width: 90vw !important;
                 }
                 .react-datepicker__header {
                     background-color: ${isDark ? '#374151' : '#f9fafb'} !important;
