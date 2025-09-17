@@ -150,13 +150,14 @@ export function SignIn() {
                <CardFooter className="pt-0 px-6 pb-6">
                  <Button
                    type="submit"
-                   className={`w-full shadow-md transition-colors duration-200 ${
+                   className={`w-full shadow-md transition-colors duration-200 !text-white ${
                      isDark 
-                       ? 'bg-blue-600 hover:bg-blue-700 text-white' 
-                       : 'bg-slate-700 hover:bg-slate-800 text-white'
+                       ? 'bg-blue-600 hover:bg-blue-700' 
+                       : 'bg-slate-700 hover:bg-slate-800'
                    }`}
                    size="lg"
                    disabled={isLoading}
+                   style={{ color: 'white !important' }}
                  >
                    {isLoading ? (
                      <div className="flex items-center justify-center gap-2">
