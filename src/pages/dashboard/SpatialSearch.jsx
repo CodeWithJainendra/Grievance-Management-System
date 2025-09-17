@@ -1065,8 +1065,8 @@ const SpatialDateRangeInput = () => {
     }
 
     return (
-        <div className="w-full relative z-[9999] min-h-[300px]">
-            <div className={`border rounded-lg shadow-lg overflow-visible ${
+        <div className="w-full relative z-[9999]">
+            <div className={`border rounded-lg shadow-lg ${
                 isDark ? 'bg-gray-800 border-gray-600' : 'bg-white border-gray-300'
             }`}>
                 <DateRangePicker
@@ -1098,15 +1098,6 @@ const SpatialDateRangeInput = () => {
                     border-radius: 8px !important;
                     box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05) !important;
                     z-index: 9999 !important;
-                    position: absolute !important;
-                    top: 100% !important;
-                    left: 0 !important;
-                    width: 100% !important;
-                    max-width: 450px !important;
-                    min-width: 400px !important;
-                    transform: scale(0.85) !important;
-                    transform-origin: top left !important;
-                    overflow: hidden !important;
                 }
                 .react-datepicker__header {
                     background-color: ${isDark ? '#374151' : '#f9fafb'} !important;
@@ -1148,14 +1139,13 @@ const SpatialDateRangeInput = () => {
                 
                 /* Scrollable Shortcuts Styling */
                 .react-datepicker__shortcuts {
-                    max-height: 250px !important;
+                    max-height: 300px !important;
                     overflow-y: auto !important;
-                    padding: 6px !important;
+                    padding: 8px !important;
                     background-color: ${isDark ? '#1f2937' : '#ffffff'} !important;
                     border-right: 1px solid ${isDark ? '#4b5563' : '#e5e7eb'} !important;
                     scrollbar-width: thin !important;
                     scrollbar-color: ${isDark ? '#4b5563 #1f2937' : '#d1d5db #ffffff'} !important;
-                    width: 140px !important;
                 }
                 
                 .react-datepicker__shortcuts::-webkit-scrollbar {
@@ -1177,16 +1167,14 @@ const SpatialDateRangeInput = () => {
                 }
                 
                 .react-datepicker__shortcut {
-                    padding: 6px 8px !important;
-                    margin: 1px 0 !important;
-                    border-radius: 4px !important;
+                    padding: 8px 12px !important;
+                    margin: 2px 0 !important;
+                    border-radius: 6px !important;
                     cursor: pointer !important;
                     transition: all 0.2s ease !important;
                     color: ${isDark ? '#d1d5db' : '#374151'} !important;
-                    font-size: 12px !important;
+                    font-size: 14px !important;
                     white-space: nowrap !important;
-                    text-overflow: ellipsis !important;
-                    overflow: hidden !important;
                 }
                 
                 .react-datepicker__shortcut:hover {
@@ -1200,24 +1188,8 @@ const SpatialDateRangeInput = () => {
                 }
                 
                 .react-datepicker__shortcuts-container {
-                    min-width: 140px !important;
-                    max-width: 150px !important;
-                }
-                
-                .react-datepicker__month-container {
-                    width: 260px !important;
-                }
-                
-                .react-datepicker__day {
-                    width: 32px !important;
-                    height: 32px !important;
-                    line-height: 32px !important;
-                    font-size: 12px !important;
-                }
-                
-                .react-datepicker__day-name {
-                    width: 32px !important;
-                    font-size: 11px !important;
+                    min-width: 180px !important;
+                    max-width: 200px !important;
                 }
             `}</style>
         </div>
