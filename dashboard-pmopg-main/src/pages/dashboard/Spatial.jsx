@@ -7,10 +7,11 @@ import { HeatMap2 } from "@/widgets/maps/heatmap/HeatMap2";
 import { toast } from "react-toastify";
 import { Button, Input, Select, Option, Checkbox } from "@material-tailwind/react";
 import { MagnifyingGlassIcon, ArrowUpRightIcon } from "@heroicons/react/24/solid";
-import { setOpenConfigurator, useMaterialTailwindController } from "@/context";
+import { setOpenConfigurator, useMaterialTailwindController, useTheme } from "@/context";
 import stateMapping from '@/data/state-data'
 
 export function Spatial() {
+  const { isDark } = useTheme()
   const [ministry, setMinistry] = React.useState(getDefaultDepartment())
   const [from, setFrom] = React.useState(dateBefore(countDayDuration))
   const [to, setTo] = React.useState(formatDate())
@@ -215,8 +216,12 @@ export function Spatial() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         
         {/* Query Card */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-          <h3 className="text-sm font-semibold text-gray-900 mb-4 flex items-center gap-2">
+        <div className={`rounded-xl shadow-sm border p-6 ${
+          isDark ? 'bg-gray-800 border-gray-600' : 'bg-white border-gray-200'
+        }`}>
+          <h3 className={`text-sm font-semibold mb-4 flex items-center gap-2 ${
+            isDark ? 'text-white' : 'text-gray-900'
+          }`}>
             <MagnifyingGlassIcon className="h-4 w-4 text-blue-600" />
             Search Query
           </h3>
@@ -254,8 +259,12 @@ export function Spatial() {
         </div>
 
         {/* Location Card */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-          <h3 className="text-sm font-semibold text-gray-900 mb-4 flex items-center gap-2">
+        <div className={`rounded-xl shadow-sm border p-6 ${
+          isDark ? 'bg-gray-800 border-gray-600' : 'bg-white border-gray-200'
+        }`}>
+          <h3 className={`text-sm font-semibold mb-4 flex items-center gap-2 ${
+            isDark ? 'text-white' : 'text-gray-900'
+          }`}>
             <MapPinIcon className="h-4 w-4 text-green-600" />
             Location Filters
           </h3>
@@ -325,8 +334,12 @@ export function Spatial() {
       {/* Date Range & Advanced Options */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Date Range Card */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-          <h3 className="text-sm font-semibold text-gray-900 mb-4 flex items-center gap-2">
+        <div className={`rounded-xl shadow-sm border p-6 ${
+          isDark ? 'bg-gray-800 border-gray-600' : 'bg-white border-gray-200'
+        }`}>
+          <h3 className={`text-sm font-semibold mb-4 flex items-center gap-2 ${
+            isDark ? 'text-white' : 'text-gray-900'
+          }`}>
             <CalendarIcon className="h-4 w-4 text-purple-600" />
             Date Range
           </h3>
@@ -334,40 +347,70 @@ export function Spatial() {
           <div className="space-y-4">
             <div className="flex gap-3">
               <div className="flex-1">
-                <label className="block text-xs font-medium text-gray-700 mb-1">
+                <label className={`block text-xs font-medium mb-1 ${
+                  isDark ? 'text-gray-300' : 'text-gray-700'
+                }`}>
                   From
                 </label>
                 <Input
                   type="date"
                   value={dateRange.start}
                   onChange={(e) => setDateRange(prev => ({ ...prev, start: e.target.value }))}
-                  className="text-sm"
+                  className={`text-sm ${
+                    isDark 
+                      ? '!bg-gray-700 !border-gray-600 !text-white focus:!border-purple-500' 
+                      : '!bg-white !border-gray-300 !text-gray-900 focus:!border-purple-500'
+                  }`}
                   max={dateRange.end || formatDate()}
+                  style={{
+                    colorScheme: isDark ? 'dark' : 'light',
+                    backgroundColor: isDark ? '#374151' : '#ffffff',
+                    color: isDark ? '#ffffff' : '#111827',
+                    borderColor: isDark ? '#4b5563' : '#d1d5db'
+                  }}
                 />
               </div>
               <div className="flex-1">
-                <label className="block text-xs font-medium text-gray-700 mb-1">
+                <label className={`block text-xs font-medium mb-1 ${
+                  isDark ? 'text-gray-300' : 'text-gray-700'
+                }`}>
                   To
                 </label>
                 <Input
                   type="date"
                   value={dateRange.end}
                   onChange={(e) => setDateRange(prev => ({ ...prev, end: e.target.value }))}
-                  className="text-sm"
+                  className={`text-sm ${
+                    isDark 
+                      ? '!bg-gray-700 !border-gray-600 !text-white focus:!border-purple-500' 
+                      : '!bg-white !border-gray-300 !text-gray-900 focus:!border-purple-500'
+                  }`}
                   min={dateRange.start || dateBefore(countDayDuration)}
+                  style={{
+                    colorScheme: isDark ? 'dark' : 'light',
+                    backgroundColor: isDark ? '#374151' : '#ffffff',
+                    color: isDark ? '#ffffff' : '#111827',
+                    borderColor: isDark ? '#4b5563' : '#d1d5db'
+                  }}
                 />
               </div>
             </div>
             
-            <div className="text-xs text-gray-500">
+            <div className={`text-xs ${
+              isDark ? 'text-gray-400' : 'text-gray-500'
+            }`}>
               Selected: {dateRange.start} to {dateRange.end}
             </div>
           </div>
         </div>
 
         {/* Advanced Options Card */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-          <h3 className="text-sm font-semibold text-gray-900 mb-4 flex items-center gap-2">
+        <div className={`rounded-xl shadow-sm border p-6 ${
+          isDark ? 'bg-gray-800 border-gray-600' : 'bg-white border-gray-200'
+        }`}>
+          <h3 className={`text-sm font-semibold mb-4 flex items-center gap-2 ${
+            isDark ? 'text-white' : 'text-gray-900'
+          }`}>
             <AdjustmentsHorizontalIcon className="h-4 w-4 text-orange-600" />
             Advanced Options
           </h3>
