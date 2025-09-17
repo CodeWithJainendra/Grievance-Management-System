@@ -148,16 +148,14 @@ export function SignIn() {
                </CardBody>
 
                <CardFooter className="pt-0 px-6 pb-6">
-                 <Button
+                 <button
                    type="submit"
-                   className={`w-full shadow-md transition-colors duration-200 !text-white ${
+                   className={`w-full py-3 px-4 rounded-lg font-medium text-white shadow-md transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed ${
                      isDark 
                        ? 'bg-blue-600 hover:bg-blue-700' 
                        : 'bg-slate-700 hover:bg-slate-800'
                    }`}
-                   size="lg"
                    disabled={isLoading}
-                   style={{ color: 'white !important' }}
                  >
                    {isLoading ? (
                      <div className="flex items-center justify-center gap-2">
@@ -170,7 +168,7 @@ export function SignIn() {
                        Sign In
                      </div>
                    )}
-                 </Button>
+                 </button>
 
                  <Typography variant="small" className={`text-center mt-4 ${
                    isDark ? 'text-gray-400' : 'text-slate-500'
