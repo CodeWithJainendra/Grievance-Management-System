@@ -150,22 +150,27 @@ export function SignIn() {
                <CardFooter className="pt-0 px-6 pb-6">
                  <button
                    type="submit"
-                   className={`w-full py-3 px-4 rounded-lg font-medium text-white shadow-md transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed ${
+                   className={`w-full py-4 px-6 rounded-lg font-semibold text-lg shadow-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed ${
                      isDark 
-                       ? 'bg-blue-600 hover:bg-blue-700' 
-                       : 'bg-slate-700 hover:bg-slate-800'
+                       ? 'bg-blue-600 hover:bg-blue-700 text-white border-2 border-blue-500' 
+                       : 'bg-gray-900 hover:bg-black text-white border-2 border-gray-800'
                    }`}
                    disabled={isLoading}
+                   style={{
+                     color: '#ffffff',
+                     backgroundColor: isDark ? '#2563eb' : '#111827',
+                     borderColor: isDark ? '#3b82f6' : '#374151'
+                   }}
                  >
                    {isLoading ? (
-                     <div className="flex items-center justify-center gap-2">
-                       <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                       Signing In...
+                     <div className="flex items-center justify-center gap-3" style={{ color: '#ffffff' }}>
+                       <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                       <span style={{ color: '#ffffff', fontWeight: '600' }}>Signing In...</span>
                      </div>
                    ) : (
-                     <div className="flex items-center justify-center gap-2">
-                       <ArrowRightOnRectangleIcon className="w-4 h-4" />
-                       Sign In
+                     <div className="flex items-center justify-center gap-3" style={{ color: '#ffffff' }}>
+                       <ArrowRightOnRectangleIcon className="w-5 h-5" style={{ color: '#ffffff' }} />
+                       <span style={{ color: '#ffffff', fontWeight: '600' }}>Sign In</span>
                      </div>
                    )}
                  </button>
