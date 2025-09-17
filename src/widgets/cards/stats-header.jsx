@@ -11,54 +11,54 @@ import dashboardService from "@/services/dashboard"
 
 export function StatsHeader({ ministry = getDefaultDepartment(), from = dateBefore(countDayDuration), to = formatDate() }) {
     const [statsData, setStatsData] = useState({});
-    const [loading, setLoading] = useState({});
+    const [loading, setLoading] = useState(true);
 
-    // Load data for each card
+    // Load all statistics with a single API call
     useEffect(() => {
-        const loadStats = async () => {
-            // Only clear cache if data is really old
-            console.log('� StatsHeader: Loading statistics with optimized caching');
+        const loadAllStats = async () => {
+            console.log('📊 StatsHeader: Loading all statistics with single API call');
+            setLoading(true);
             
-            for (const card of statisticsCardsData) {
-                setLoading(prev => ({ ...prev, [card.title]: true }));
+            // Set all cards to loading state
+            const initialLoading = {};
+            statisticsCardsData.forEach(card => {
+                initialLoading[card.title] = true;
+            });
+            
+            try {
+                // Use the optimized getCDISStatistics function that fetches all data at once
+                const statistics = await dashboardService.getCDISStatistics(ministry, from, to);
                 
-                try {
-                    console.log(`📊 Loading ${card.title} for ministry: ${ministry}, period: ${from} to ${to}`);
-                    
-                    // Use cached data efficiently
-                    const data = await card.getCount(ministry, from, to);
-                    
-                    console.log(`📈 ${card.title} raw response:`, data);
-                    
-                    // Handle different response structures
-                    let value = 0;
-                    if (typeof data === 'number') {
-                        value = data;
-                    } else if (data?.data !== undefined) {
-                        value = data.data;
-                    } else if (data?.total_count) {
-                        value = typeof data.total_count === 'object' 
-                            ? data.total_count.total_count 
-                            : data.total_count;
-                    }
-                    
-                    const finalValue = parseInt(value) || 0;
-                    console.log(`✅ ${card.title} final value:`, finalValue);
-                    
-                    setStatsData(prev => ({ 
-                        ...prev, 
-                        [card.title]: finalValue 
-                    }));
-                } catch (error) {
-                    console.error(`❌ Error loading ${card.title}:`, error);
-                    setStatsData(prev => ({ ...prev, [card.title]: 0 }));
-                } finally {
-                    setLoading(prev => ({ ...prev, [card.title]: false }));
-                }
+                console.log('📈 All statistics loaded:', statistics);
+                
+                // Map the statistics to card titles
+                const mappedStats = {
+                    'TOTAL GRIEVANCES': statistics.totalGrievances || 0,
+                    'PENDING': statistics.pendingGrievances || 0,
+                    'RESOLVED': statistics.resolvedGrievances || 0,
+                    'AVG. RESOLUTION TIME': statistics.avgResolutionTime || 0
+                };
+                
+                console.log('✅ Mapped statistics:', mappedStats);
+                setStatsData(mappedStats);
+                
+            } catch (error) {
+                console.error('❌ Error loading statistics:', error);
+                
+                // Set fallback data
+                const fallbackStats = {
+                    'TOTAL GRIEVANCES': 0,
+                    'PENDING': 0,
+                    'RESOLVED': 0,
+                    'AVG. RESOLUTION TIME': 0
+                };
+                setStatsData(fallbackStats);
+            } finally {
+                setLoading(false);
             }
         };
 
-        loadStats();
+        loadAllStats();
     }, [ministry, from, to]);
 
     return (
@@ -71,10 +71,10 @@ export function StatsHeader({ ministry = getDefaultDepartment(), from = dateBefo
                         color={card.color}
                         icon={card.icon}
                         title={card.title}
-                        value={statsData[card.title]}
+                        value={statsData[card.title] || 0}
                         suffix={card.suffix || ""}
                         tooltip={card.tooltip}
-                        loading={loading[card.title]}
+                        loading={loading}
                     />
                 ))}
             </div>

@@ -21,22 +21,22 @@ import { getUser } from '@/context/UserContext'
 export const colors = [
     {
         percentage: 0.75,
-        color: '#FFB3B3',
+        color: '#8B0000', // Dark red for highest values (>750)
         className: 'bg-legend-red-1'
     },
     {
         percentage: 0.5,
-        color: '#FFC9C9',
+        color: '#DC143C', // Crimson for high values (>500)
         className: 'bg-legend-red-2'
     },
     {
         percentage: 0.25,
-        color: '#FFDFDF',
+        color: '#FF6B6B', // Medium red for medium values (>250)
         className: 'bg-legend-red-3'
     },
     {
         percentage: 0,
-        color: '#FFF0F0',
+        color: '#FFB3B3', // Light red for low values (<250)
         className: 'bg-legend-red-4'
     }
 ]
@@ -44,13 +44,131 @@ export const colors = [
 export const textColor = '#353839'
 export const center = [23, 83];
 
-export const reduceGrievances = grievance_data => grievance_data.reduce((accumulator, state_data) => {
-    if (state_id_pair[state_data['state']]) {
-        accumulator[state_id_pair[state_data['state']]] = state_data['count']
-    }
+export const reduceGrievances = grievance_data => {
+    console.log('🔍 reduceGrievances input data:', grievance_data.slice(0, 5));
+    console.log('🔍 Input data length:', grievance_data?.length);
+    console.log('🔍 Available state_id_pair keys:', Object.keys(state_id_pair));
+    
+    // Log all unique state names from input
+    const uniqueStates = [...new Set(grievance_data.map(g => g.state?.toLowerCase()?.trim()).filter(Boolean))];
+    console.log('🔍 Unique state names from API:', uniqueStates);
+    
+    const result = grievance_data.reduce((accumulator, state_data) => {
+        // Normalize state name for proper mapping
+        let stateName = state_data['state'];
+        const originalStateName = stateName;
+        
+        if (stateName) {
+            // Convert to lowercase and handle common variations
+            stateName = stateName.toLowerCase().trim();
+            
+            // Comprehensive state name mappings to handle API variations
+          const stateNameMappings = {
+              // Tamil Nadu variations
+              'tamil nadu': 'tamilnadu',
+              'tamilnadu': 'tamilnadu',
+              'tn': 'tamilnadu',
+              
+              // Jammu and Kashmir variations
+              'jammu and kashmir': 'jammu and kashmir',
+              'jammu & kashmir': 'jammu and kashmir',
+              'j&k': 'jammu and kashmir',
+              'jk': 'jammu and kashmir',
+              
+              // Andaman and Nicobar variations
+              'andaman and nicobar islands': 'andaman and nicobar islands',
+              'andaman & nicobar islands': 'andaman and nicobar islands',
+              'a&n islands': 'andaman and nicobar islands',
+              'andaman and nicobar': 'andaman and nicobar islands',
+              'andaman & nicobar': 'andaman and nicobar islands',
+              
+              // Dadra and Nagar Haveli variations
+              'dadra and nagar haveli': 'dadra and nagar haveli',
+              'dadra & nagar haveli': 'dadra and nagar haveli',
+              'dadra and nagar haveli and daman and diu': 'dadra and nagar haveli',
+              
+              // Daman and Diu variations
+              'daman and diu': 'daman and diu',
+              'daman & diu': 'daman and diu',
+              
+              // Delhi variations
+              'delhi': 'delhi',
+              'nct of delhi': 'delhi',
+              'national capital territory of delhi': 'delhi',
+              'new delhi': 'delhi',
+              
+              // Other common variations
+              'pondicherry': 'puducherry',
+              'orissa': 'odisha',
+              'uttaranchal': 'uttarakhand',
+              
+              // State abbreviations
+              'ap': 'andhra pradesh',
+              'ar': 'arunachal pradesh',
+              'as': 'assam',
+              'br': 'bihar',
+              'cg': 'chhattisgarh',
+              'ga': 'goa',
+              'gj': 'gujarat',
+              'hr': 'haryana',
+              'hp': 'himachal pradesh',
+              'jh': 'jharkhand',
+              'ka': 'karnataka',
+              'kl': 'kerala',
+              'mp': 'madhya pradesh',
+              'mh': 'maharashtra',
+              'mn': 'manipur',
+              'ml': 'meghalaya',
+              'mz': 'mizoram',
+              'nl': 'nagaland',
+              'or': 'odisha',
+              'pb': 'punjab',
+              'rj': 'rajasthan',
+              'sk': 'sikkim',
+              'tr': 'tripura',
+              'up': 'uttar pradesh',
+              'uk': 'uttarakhand',
+              'wb': 'west bengal',
+              'ts': 'telangana',
+              'la': 'ladakh'
+          };
+            
+            // Use mapping if available, otherwise use normalized name
+            stateName = stateNameMappings[stateName] || stateName;
+        }
+        
+        if (stateName && state_id_pair[stateName]) {
+            const stateId = state_id_pair[stateName];
+            accumulator[stateId] = (accumulator[stateId] || 0) + (state_data['count'] || 1);
+            console.log(`✅ Mapped state: "${originalStateName}" -> "${stateName}" -> ID ${stateId} (count: ${state_data['count']})`);
+        } else {
+            console.warn(`❌ Failed to map state: "${originalStateName}" -> "${stateName}" (not found in state_id_pair)`);
+            
+            // Try fuzzy matching as fallback
+            const availableStates = Object.keys(state_id_pair);
+            const fuzzyMatch = availableStates.find(availableState => 
+                availableState.includes(stateName) || 
+                stateName.includes(availableState) ||
+                availableState.replace(/\s+/g, '').includes(stateName.replace(/\s+/g, '')) ||
+                stateName.replace(/\s+/g, '').includes(availableState.replace(/\s+/g, ''))
+            );
+            
+            if (fuzzyMatch) {
+                const stateId = state_id_pair[fuzzyMatch];
+                accumulator[stateId] = (accumulator[stateId] || 0) + (state_data['count'] || 1);
+                console.log(`🔄 Fuzzy matched state: "${originalStateName}" -> "${stateName}" -> "${fuzzyMatch}" -> ID ${stateId}`);
+            } else {
+                console.warn(`🚫 No match found for state: "${originalStateName}" -> Available states:`, availableStates.slice(0, 5), '...');
+            }
+        }
 
-    return accumulator
-}, {})
+        return accumulator;
+    }, {});
+    
+    console.log('🗺️ Final reduced grievances:', result);
+    console.log('🔍 Total mapped states:', Object.keys(result).length);
+    return result;
+}
 
 export const id_state_pair = Object.keys(state_id_pair).reduce((accumulator, state) => {
     accumulator[state_id_pair[state]] = state

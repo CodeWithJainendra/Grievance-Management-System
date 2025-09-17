@@ -15,7 +15,7 @@ import App from "./App";
 import { BrowserRouter } from "react-router-dom";
 import { ThemeProvider } from "@material-tailwind/react";
 import { MaterialTailwindControllerProvider } from "@/context";
-import "../public/css/tailwind.css";
+import "./styles/tailwind.css";
 import "./styles/premium-cards.css";
 
 import { FilterProvider } from "./context/FilterContext";

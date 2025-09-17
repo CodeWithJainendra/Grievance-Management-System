@@ -98,6 +98,7 @@ console.warn = (...args) => {
   // Suppress known third-party library warnings
   if (message.includes('UNSAFE_componentWillReceiveProps') ||
       message.includes('Using UNSAFE_componentWillReceiveProps in strict mode') ||
+      message.includes('UNSAFE_componentWillReceiveProps in strict mode is not recommended') ||
       message.includes('Autosuggest2') ||
       message.includes('Autowhatever2') ||
       message.includes('componentWillReceiveProps') ||
@@ -109,7 +110,7 @@ console.warn = (...args) => {
       message.includes('static getDerivedStateFromProps') ||
       (message.includes('Please update the following components:') && 
        (message.includes('Autosuggest') || message.includes('Autowhatever')))) {
-    console.log('⚠️ Known Issue: Third-party library (react-autosuggest) uses deprecated lifecycle methods - warning suppressed');
+    // Silently suppress these warnings as they come from third-party libraries
     return;
   }
   

@@ -45,12 +45,14 @@ import { HeatMap2 } from "@/widgets/maps/heatmap/HeatMap2";
 import EnhancedHeatmap from "@/widgets/maps/EnhancedHeatmap";
 import mapService from "@/services/maps"
 import { Link } from "react-router-dom";
+import { toast } from "react-toastify";
 import { DateRangePicker, MinistryAutocomplete, StateDistrictAutocomplete, capitalize } from "./CategoricalTree";
 import { getDefaultStateDistrict } from "@/widgets/layout";
 import { downloadCSV } from "./SpatialSearch";
 import { getTopCategories } from "@/services/category";
 import GrievanceTrends from "@/widgets/charts/GrievanceTrends";
 import StateDistribution from "@/widgets/charts/StatusDistribution";
+import RecentQueries from "@/widgets/component/RecentQueries";
 
 export function Home() {
   const { isDark } = useTheme();
@@ -84,13 +86,20 @@ export function Home() {
   const [LineChartOptions, setLineChartOptions] = useState(null)
   const [LineChartSeries, setLineChartSeries] = useState(null)
 
-  const [ministry, setMinistry] = useState(getDefaultDepartment()) // Will now default to DOCAF
-  const [from, setFrom] = useState("2016-08-01") // Fixed start date
-  const [to, setTo] = useState("2016-08-30") // Fixed end date
+  // Default date logic: 2016-10-01 to present day
+  const getDefaultFromDate = () => "2016-10-01";
+  const getDefaultToDate = () => {
+    const today = new Date();
+    return today.toISOString().split('T')[0]; // Format: YYYY-MM-DD
+  };
+
+  const [ministry, setMinistry] = useState("DOCAF") // Default to DOCAF as specified
+  const [from, setFrom] = useState(getDefaultFromDate()) // Default start: 2016-10-01
+  const [to, setTo] = useState(getDefaultToDate()) // Default end: today
   const [headerAttributes, setHeaderAttributes] = useState({
-    ministry: getDefaultDepartment(), // Will be DOCAF
-    from: "2016-08-01",
-    to: "2016-08-30"
+    ministry: "DOCAF", // Default to DOCAF
+    from: getDefaultFromDate(),
+    to: getDefaultToDate()
   })
 
   const [searching, setSearching] = useState(false)
@@ -377,49 +386,207 @@ export function Home() {
     return Object.values(response.data).sort((a, b) => a.count - b.count)
   }, [headerAttributes])
 
-  // Enhanced heatmap data with CDIS integration
+  // Handle ANALYZE button click - trigger fresh API call
+  const handleAnalyzeClick = async () => {
+    console.log('🔍 ANALYZE button clicked - Starting API call...');
+    setSearching(true);
+    setHeatMapLoading(true);
+    
+    try {
+      console.log('🔍 ANALYZE button clicked - Loading fresh heatmap data...');
+      
+      // Use chosen dates or default to 2016-10-01 to present
+      const startDate = from || getDefaultFromDate();
+      const endDate = to || getDefaultToDate();
+      const selectedMinistry = ministry || "DOCAF";
+      
+      console.log('📅 Using dates:', { startDate, endDate, ministry: selectedMinistry });
+      console.log('🚀 About to call API with parameters...');
+      
+      // Clear previous results and show loading state
+      setApiResults([]);
+      setTotalGrievances(0);
+      setGrievanceData([]);
+      
+      // Update header attributes to show loading state
+      setHeaderAttributes({
+        ministry: selectedMinistry,
+        from: startDate,
+        to: endDate
+      });
+      
+      toast(`🔄 Loading data for ${selectedMinistry} from ${startDate} to ${endDate}...`, { type: 'info' });
+      
+      // Make the real API call
+      try {
+        const mapServiceModule = await import('@/services/maps');
+        const { getHeatmapGrievances } = mapServiceModule.default;
+        console.log('📦 Maps service imported successfully');
+        
+        console.log('🌐 Making API call to getHeatmapGrievances...');
+        const result = await getHeatmapGrievances(
+          selectedMinistry, // DOCAF or user selected ministry
+          startDate,        // Chosen date or default 2016-10-01
+          endDate,          // Chosen date or default today
+          'All',            // state filter - All states
+          'All'             // district filter - All districts
+        );
+        
+        console.log('📊 API call completed, result:', result);
+      
+        // If real API data is available, use it
+        if (result && result.data && result.data.length > 0) {
+          console.log('✅ Real API data received:', result.data.length, 'states');
+          
+          // Sort data by count in descending order to show highest first
+          const sortedData = result.data.sort((a, b) => b.count - a.count);
+          
+          // Set real API results
+          setApiResults(sortedData);
+          const total = sortedData.reduce((sum, item) => sum + item.count, 0);
+          setTotalGrievances(total);
+          
+          // Try to update map data (but don't show error if it fails)
+          try {
+            setHeatMapData(sortedData);
+          } catch (mapError) {
+            console.log('Map update failed, but continuing with table display');
+          }
+          
+          // Update state distribution data for charts
+          const stateDistribution = {
+            stateDetails: sortedData.map(item => ({
+              name: item.state.toUpperCase(),
+              count: item.count
+            }))
+          };
+          setStateDistributionData(stateDistribution);
+          
+          // Fetch individual grievance records for category analysis
+          try {
+            console.log('🔍 Fetching individual grievance records for category analysis...');
+            const searchService = await import('@/services/searchService');
+            const searchServiceInstance = new searchService.default();
+            
+            const searchParams = {
+              ministry: selectedMinistry,
+              from_date: startDate,
+              to_date: endDate,
+              page_req: 1,
+              limit: 1000 // Get enough records for category analysis
+            };
+            
+            const searchResult = await searchServiceInstance.searchGrievances(searchParams);
+            
+            if (searchResult.success && searchResult.grievances) {
+              console.log('✅ Individual grievance records fetched:', searchResult.grievances.length);
+              setGrievanceData(searchResult.grievances);
+            } else {
+              console.log('❌ Failed to fetch individual grievance records');
+              setGrievanceData([]);
+            }
+          } catch (searchError) {
+            console.error('❌ Error fetching individual grievance records:', searchError);
+            setGrievanceData([]);
+          }
+          
+          toast(`✅ Real data loaded: ${total.toLocaleString()} grievances across ${sortedData.length} states`, { type: 'success' });
+        } else {
+          console.log('❌ No real API data received');
+          toast('❌ No data found for the selected criteria', { type: 'warning' });
+        }
+      } catch (apiError) {
+          console.error('❌ API call failed:', apiError);
+          toast(`❌ Failed to load data: ${apiError.message}`, { type: 'error' });
+          
+          // Clear loading state on error
+        setApiResults([]);
+        setTotalGrievances(0);
+        setGrievanceData([]);
+        }
+      } catch (error) {
+        console.error('❌ Unexpected error:', error);
+        toast(`❌ Unexpected error: ${error.message}`, { type: 'error' });
+        
+        // Clear loading state on error
+        setSearching(false);
+        setHeatMapLoading(false);
+        setApiResults([]);
+        setTotalGrievances(0);
+        setGrievanceData([]);
+      } finally {
+        // Always clear loading states
+        setSearching(false);
+        setHeatMapLoading(false);
+      }
+  };
+
+  // Enhanced heatmap data with CDIS integration - Initial data with realistic counts for choropleth coloring
   const [heatMapData, setHeatMapData] = useState([
-    // Default states to show map immediately
-    { state: 'maharashtra', count: 0, cities: {} },
-    { state: 'uttar pradesh', count: 0, cities: {} },
-    { state: 'karnataka', count: 0, cities: {} },
-    { state: 'tamil nadu', count: 0, cities: {} },
-    { state: 'gujarat', count: 0, cities: {} },
-    { state: 'rajasthan', count: 0, cities: {} },
-    { state: 'west bengal', count: 0, cities: {} },
-    { state: 'punjab', count: 0, cities: {} }
+    // Default states with sample counts that match circular chart data for initial choropleth display
+    { state: 'maharashtra', count: 1250, cities: {} },
+    { state: 'uttar pradesh', count: 1180, cities: {} },
+    { state: 'karnataka', count: 950, cities: {} },
+    { state: 'tamilnadu', count: 850, cities: {} }, // Fixed: tamil nadu -> tamilnadu
+    { state: 'gujarat', count: 720, cities: {} },
+    { state: 'rajasthan', count: 680, cities: {} },
+    { state: 'west bengal', count: 620, cities: {} },
+    { state: 'punjab', count: 580, cities: {} },
+    { state: 'haryana', count: 520, cities: {} },
+    { state: 'bihar', count: 480, cities: {} },
+    { state: 'odisha', count: 420, cities: {} },
+    { state: 'kerala', count: 380, cities: {} },
+    { state: 'assam', count: 340, cities: {} },
+    { state: 'jharkhand', count: 300, cities: {} },
+    { state: 'chhattisgarh', count: 280, cities: {} }
   ]);
   const [heatMapLoading, setHeatMapLoading] = useState(false); // Show map immediately
 
   // Add state distribution data for sharing between chart and heatmap
   const [stateDistributionData, setStateDistributionData] = useState(null);
+  
+  // Store API results for display below map
+  const [apiResults, setApiResults] = useState(null);
+  const [totalGrievances, setTotalGrievances] = useState(0);
+  const [grievanceData, setGrievanceData] = useState([]);
 
-  // Fetch state distribution data once and share it
+  // Fetch state distribution data once and share it using the new API integration
   useEffect(() => {
     const loadStateDistributionData = async () => {
       try {
-        console.log('🗺️ Loading shared state distribution data...');
-        const stateData = await dashboardService.getCDISStateData(
+        console.log('🗺️ Loading choropleth map data from API...');
+        setHeatMapLoading(true);
+        
+        // Use the updated maps service that calls the user's API
+        const mapService = await import('@/services/maps');
+        const result = await mapService.getHeatmapGrievances(
           headerAttributes.ministry, 
           headerAttributes.from, 
-          headerAttributes.to
+          headerAttributes.to,
+          'All', // state filter
+          'All'  // district filter
         );
         
-        setStateDistributionData(stateData);
-        
-        // Convert to heatmap format
-        if (stateData && stateData.stateDetails) {
-          const heatmapData = stateData.stateDetails.map(state => ({
-            state: state.name.toLowerCase(),
-            count: state.count,
-            cities: {} // Will be populated when user clicks
-          }));
+        if (result && result.data) {
+          setHeatMapData(result.data);
+          console.log('✅ Choropleth map data loaded from API:', result.data.length, 'states');
+          console.log('🔍 API State names:', result.data.map(item => item.state).sort());
+          console.log('🔍 Sample API data:', result.data.slice(0, 5));
           
-          setHeatMapData(heatmapData);
-          console.log('✅ Heatmap data loaded from shared state data:', heatmapData.length, 'states');
+          // Also update state distribution data for other components
+          const stateDistribution = {
+            stateDetails: result.data.map(item => ({
+              name: item.state.toUpperCase(),
+              count: item.count
+            }))
+          };
+          setStateDistributionData(stateDistribution);
         }
       } catch (error) {
-        console.error('❌ Error loading state distribution data:', error);
+        console.error('❌ Error loading choropleth map data:', error);
+        // Keep default data on error
+      } finally {
+        setHeatMapLoading(false);
       }
     };
 
@@ -429,6 +596,8 @@ export function Home() {
   useEffect(() => {
     // This useEffect is now simplified since we handle data fetching above
     console.log('📊 BarChartSeries:', BarChartSeries);
+    console.log('🗺️ Current heatMapData:', heatMapData);
+    // Debug trigger
     
     // Only use BarChartSeries as backup if state distribution data is not available
     if (!stateDistributionData && BarChartSeries && BarChartSeries[0] && BarChartSeries[0].data && BarChartSeries[0].data.length > 0) {
@@ -516,7 +685,7 @@ export function Home() {
   }, [])
 
   return (
-    <div className={`mt-12 transition-colors duration-300 ${isDark ? 'text-white' : ''}`}>
+    <div className={`mt-6 transition-colors duration-300 ${isDark ? 'text-white' : ''}`}>
       <StatsHeader {...headerAttributes} />
 
       <BasicFilters
@@ -527,11 +696,11 @@ export function Home() {
         to={to}
         setTo={setTo}
         searching={searching}
-        startSearch={() => setSearching(true)}
+        startSearch={handleAnalyzeClick}
       />
 
-      <div className="grid grid-cols-5 gap-4">
-        <div className="col-span-3 h-[80vh]">
+      <div className="grid grid-cols-5 gap-3">
+        <div className="col-span-3 h-[70vh]">
           <EnhancedHeatmap
             grievances={heatMapData}
             className={`rounded-md shadow-md ${isDark ? 'shadow-gray-700' : 'shadow-red-300'}`}
@@ -540,18 +709,19 @@ export function Home() {
           />
         </div>
 
-        <div className="col-span-2 space-y-4">
+        <div className="col-span-2 space-y-3">
           {/* Curved Line Chart - Half height */}
-          <div className="h-[38vh]">
+          <div className="h-[33vh]">
             <GrievanceTrends 
               from={headerAttributes.from} 
               to={headerAttributes.to} 
-              ministry={headerAttributes.ministry} 
+              ministry={headerAttributes.ministry}
+              grievanceData={grievanceData}
             />
           </div>
           
           {/* Circular Data Visualization - Half height */}
-          <div className="h-[38vh]">
+          <div className="h-[33vh]">
             <StateDistribution 
               from={headerAttributes.from} 
               to={headerAttributes.to} 
@@ -562,15 +732,22 @@ export function Home() {
         </div>
       </div>
 
+
+
+      {/* Recent Queries Section */}
+      <div className="mt-12">
+        <RecentQueries />
+      </div>
+
       <br></br>
 
-      <div className="flex gap-5 flex-col md:flex-row">
+      <div className="flex gap-4 flex-col md:flex-row">
         {PieChartOptions && PieChartSeries && (
-          <Chart options={PieChartOptions} series={PieChartSeries} type="pie" height={400} className="md:w-1/2" />
+          <Chart options={PieChartOptions} series={PieChartSeries} type="pie" height={350} className="md:w-1/2" />
         )}
 
         {LineChartOptions && LineChartSeries && (
-          <Chart options={LineChartOptions} series={LineChartSeries} type="line" height={400} className="md:w-1/2" />
+          <Chart options={LineChartOptions} series={LineChartSeries} type="line" height={350} className="md:w-1/2" />
         )}
       </div>
 
@@ -588,7 +765,7 @@ export function Home() {
               series={getBarChartSeries()}
               type="bar"
               className={BarChartType != 'all-states' ? "md:w-1/2" : ""}
-              height={400}
+              height={350}
             />
 
             <Chart
@@ -599,7 +776,7 @@ export function Home() {
               series={getBarChartSeries(true)}
               type="bar"
               className={BarChartType != 'all-states' ? "md:w-1/2" : ""}
-              height={400}
+              height={350}
             />
           </div>
 
@@ -754,7 +931,7 @@ const TopRepeaters = ({
               <MenuItem onClick={() => setShowStateDistrictPicker(true)}>
                 <div className="flex justify-between gap-2">
                   <div>
-                    State &gt; District:&nbsp;
+                    State &gt; Districts:&nbsp;
 
                     {capitalize(filters.state)}
 
@@ -949,7 +1126,7 @@ const InputDialog = ({
     }
 
     <DialogBody>
-      {content}
+      {content || <div></div>}
     </DialogBody>
 
     <DialogFooter className="gap-2">

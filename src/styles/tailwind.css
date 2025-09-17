@@ -90,14 +90,12 @@
     @apply visible z-50;
 }
 
-.top-repeater {
-    & .action-icon {
-        @apply cursor-pointer hover:shadow hover:shadow-[#b30000] hover:rounded;
-    }
+.top-repeater .action-icon {
+    @apply cursor-pointer hover:shadow hover:shadow-[#b30000] hover:rounded;
+}
 
-    & .action-icon.disabled {
-        @apply hover:shadow-none fill-[#b3000099] cursor-default;
-    }
+.top-repeater .action-icon.disabled {
+    @apply hover:shadow-none fill-[#b3000099] cursor-default;
 }
 
 .short-popup> :nth-child(3)> :nth-child(2) {

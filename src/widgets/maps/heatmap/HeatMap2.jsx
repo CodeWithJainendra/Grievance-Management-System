@@ -14,6 +14,7 @@ import { Loader } from "@/pages/dashboard/CategoricalTree"
 import { toast } from "react-toastify"
 import populations from "@/data/json/india_state_populations.json"
 import { numberToWords } from "@/helpers/general"
+import StatePopup from './StatePopup'
 
 const ZOOM = 5.2
 
@@ -30,12 +31,32 @@ export const HeatMap2 = ({
     const [loading, setLoading] = useState(false)
     const [focusedDistrict, setFocusedDistrict] = useState(null)
     const [showDensityBased, setShowDensityBased] = useState(false)
+    
+    // Popup state management
+    const [popupData, setPopupData] = useState(null);
+    const [popupPosition, setPopupPosition] = useState({ x: 0, y: 0 });
+    const [isPopupOpen, setIsPopupOpen] = useState(false);
 
     function getColor(grievance_count) {
-        return colors
-            .find(color => grievance_count > getThreshold(color.percentage))
-            ?.color
-            || "#F0F8FF" // Light blue default for better visibility
+        if (!grievance_count || grievance_count <= 0) {
+            return "#F0F8FF"; // Light blue for no data
+        }
+        
+        const upperLimitValue = upperLimit();
+        
+        // Sort colors by percentage in descending order (highest first)
+        const sortedColors = [...colors].sort((a, b) => b.percentage - a.percentage);
+        
+        // Find the appropriate color by checking from highest threshold to lowest
+        for (const color of sortedColors) {
+            const threshold = Math.round(color.percentage * upperLimitValue);
+            if (grievance_count > threshold) {
+                return color.color;
+            }
+        }
+        
+        // If no threshold is met, return the lightest color
+        return colors[colors.length - 1].color;
     }
 
     const getThreshold = percentage => Math.round(percentage * upperLimit())
@@ -49,6 +70,7 @@ export const HeatMap2 = ({
 
     const simplifiedGrievances = useMemo(() => {
         let simple_grievances = getSimplifiedGrievances(grievances)
+        
         if (showDensityBased) {
 
             simple_grievances = getSimplifiedGrievances(grievances.map(({ state, count }) => {
@@ -74,6 +96,56 @@ export const HeatMap2 = ({
 
         return Math.round(max / 10 ** desiredZeros) * 10 ** desiredZeros
     }, [simplifiedGrievances])
+
+    // Handle state click for popup
+    const handleStateClick = useCallback((stateId, event) => {
+        const stateName = id_state_pair[stateId];
+        const grievanceCount = simplifiedGrievances[stateId] || 0;
+        const totalGrievances = Object.values(simplifiedGrievances).reduce((sum, count) => sum + count, 0);
+        const percentage = totalGrievances > 0 ? (grievanceCount / totalGrievances) * 100 : 0;
+        
+        // Find cities data for this state
+        const stateGrievanceData = grievances.find(g => 
+            g.state?.toLowerCase() === stateName?.toLowerCase()
+        );
+        
+        // Get mouse position for popup placement
+        const rect = event.originalEvent.target.getBoundingClientRect();
+        const x = event.originalEvent.clientX;
+        const y = event.originalEvent.clientY;
+        
+        setPopupData({
+            stateName: stateName,
+            grievanceCount: grievanceCount,
+            percentage: percentage,
+            totalGrievances: totalGrievances,
+            cities: stateGrievanceData?.cities || {},
+            color: getColor(grievanceCount)
+        });
+        
+        setPopupPosition({ x, y });
+        setIsPopupOpen(true);
+    }, [simplifiedGrievances, grievances, getColor])
+
+    // Close popup handler
+    const closePopup = useCallback(() => {
+        setIsPopupOpen(false);
+        setPopupData(null);
+    }, [])
+
+    // Close popup on outside click
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (isPopupOpen && !event.target.closest('.state-popup')) {
+                closePopup();
+            }
+        };
+
+        if (isPopupOpen) {
+            document.addEventListener('click', handleClickOutside);
+            return () => document.removeEventListener('click', handleClickOutside);
+        }
+    }, [isPopupOpen, closePopup])
 
     let options = state_id => {
         const grievanceCount = simplifiedGrievances[state_id];
@@ -124,7 +196,7 @@ export const HeatMap2 = ({
                             options={options(state.properties.id)}
                             textBounds={state_text_bounds[state.properties.id]}
                             text={simplifiedGrievances[state.properties.id] && simplifiedGrievances[state.properties.id] > 0 
-                                ? simplifiedGrievances[state.properties.id].toLocaleString('en-US') + legendSuffix 
+                                ? `${id_state_pair[state.properties.id].split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}: ${simplifiedGrievances[state.properties.id].toLocaleString('en-US')}${legendSuffix}` 
                                 : ''}
                             count={simplifiedGrievances[state.properties.id] ?? 0}
                             key={state.properties.id}
@@ -136,6 +208,7 @@ export const HeatMap2 = ({
                             loading={loading}
                             setDistrict={updateFoucsedDistrict}
                             focusedDistrict={focusedDistrict}
+                            onStateClick={handleStateClick}
                         />
                     )
                 }
@@ -176,6 +249,14 @@ export const HeatMap2 = ({
             }
 
             <Copyright />
+            
+            {/* State Details Popup */}
+            <StatePopup
+                isOpen={isPopupOpen}
+                onClose={closePopup}
+                stateData={popupData}
+                position={popupPosition}
+            />
         </div>
     )
 }
@@ -239,10 +320,12 @@ const FocusedStateInfo = ({
         </div >
 }
 
-const getSimplifiedGrievances = grievances => ({
-    ...reduceGrievances(default_grievances),
-    ...reduceGrievances(grievances)
-})
+const getSimplifiedGrievances = (grievances) => {
+    const reduced_grievances = reduceGrievances(grievances)
+    const reduced_default_grievances = reduceGrievances(default_grievances)
+    const result = { ...reduced_default_grievances, ...reduced_grievances };
+    return result;
+}
 
 const capitalize = sentance =>
     sentance

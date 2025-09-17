@@ -25,6 +25,12 @@ export default function State(props) {
                 eventHandlers={{
                     click(e) {
                         if (!props.loading) {
+                            // Call popup handler if provided
+                            if (props.onStateClick) {
+                                props.onStateClick(props.index, e);
+                            }
+                            
+                            // Existing focus behavior
                             map.fitBounds(e.layer._bounds)
                             props.focus()
                         }

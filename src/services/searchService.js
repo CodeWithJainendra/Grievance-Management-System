@@ -91,9 +91,25 @@ class SearchService {
     try {
       console.log('🗺️ SearchService: Getting state-wise distribution with params:', params);
       
+      // Build parameters in the format expected by the user's API
+      const apiParams = {
+        startDate: params.startDate || params.from || '2016-01-01',
+        endDate: params.endDate || params.to || '2025-12-31',
+        state: params.state || 'All',
+        ministry: params.ministry || 'All',
+        type: '1',
+        query: params.query || 'All',
+        threshold: params.threshold || '1.2',
+        all_record: '1',
+        page_req: '0',
+        value: '1',
+        skiprecord: '0',
+        size: '10000' // Get more records for better distribution
+      };
+      
       // Clean up null/undefined parameters
       const cleanParams = Object.fromEntries(
-        Object.entries(params).filter(([_, value]) => value !== null && value !== undefined)
+        Object.entries(apiParams).filter(([_, value]) => value !== null && value !== undefined)
       );
       
       // Make direct API call to user's endpoint
@@ -103,15 +119,25 @@ class SearchService {
       console.log('✅ SearchService: State distribution received:', {
         status: response.status,
         dataKeys: Object.keys(data || {}),
-        grievanceDataCount: data?.grievanceData?.length || 0
+        grievanceDataCount: data?.grievanceData?.length || 0,
+        totalCount: data?.total_count
       });
       
       // Calculate state-wise distribution from grievanceData
       if (data && data.grievanceData) {
         const stateDistribution = {};
         data.grievanceData.forEach(grievance => {
-          const state = (grievance.stateName || grievance.state || 'Unknown').toLowerCase();
-          stateDistribution[state] = (stateDistribution[state] || 0) + 1;
+          let stateName = grievance.stateName || grievance.state || 'Unknown';
+          
+          // Normalize state names and handle special cases
+          if (stateName === 'Unknown' || stateName === 'nan' || !stateName) {
+            stateName = 'Unknown';
+          } else {
+            // Convert to uppercase for consistency
+            stateName = stateName.toUpperCase();
+          }
+          
+          stateDistribution[stateName.toLowerCase()] = (stateDistribution[stateName.toLowerCase()] || 0) + 1;
         });
         
         return {
@@ -119,6 +145,7 @@ class SearchService {
           data: {
             state_wise_distribution: stateDistribution
           },
+          totalCount: data.total_count?.total_count || data.grievanceData.length,
           message: 'State distribution calculated successfully'
         };
       } else {
@@ -127,6 +154,7 @@ class SearchService {
           data: {
             state_wise_distribution: {}
           },
+          totalCount: 0,
           error: 'No grievance data received'
         };
       }
@@ -138,6 +166,7 @@ class SearchService {
         data: {
           state_wise_distribution: {}
         },
+        totalCount: 0,
         error: error.message || 'State distribution request failed'
       };
     }

@@ -19,7 +19,11 @@ let cachedStatistics = null;
 let cacheTimestamp = null;
 let cachedTrendData = null;
 let trendCacheTimestamp = null;
-const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+const CACHE_DURATION = 10 * 60 * 1000; // 10 minutes - increased cache duration
+
+// Global API call state to prevent multiple simultaneous calls
+let isApiCallInProgress = false;
+let pendingApiPromise = null;
 
 // Force clear cache (for debugging)
 const clearDashboardCache = () => {
@@ -27,6 +31,8 @@ const clearDashboardCache = () => {
     cacheTimestamp = null;
     cachedTrendData = null;
     trendCacheTimestamp = null;
+    isApiCallInProgress = false;
+    pendingApiPromise = null;
     console.log('🗑️ Dashboard cache cleared');
 };
 
@@ -43,20 +49,36 @@ const getCDISStatistics = async (ministry = 'DOCAF', from = '2016-08-01', to = '
         return cachedStatistics;
     }
 
+    // If API call is already in progress, wait for it
+    if (isApiCallInProgress && pendingApiPromise) {
+        console.log('⏳ API call already in progress, waiting for result...');
+        return await pendingApiPromise;
+    }
+
+    // Set API call in progress and create promise
+    isApiCallInProgress = true;
+    pendingApiPromise = fetchStatisticsData(ministry, from, to);
+
     try {
-        console.log('🔍 Fetching CDIS Dashboard Statistics for:', ministry, from, to);
+        const result = await pendingApiPromise;
+        return result;
+    } finally {
+        // Reset API call state
+        isApiCallInProgress = false;
+        pendingApiPromise = null;
+    }
+};
+
+const fetchStatisticsData = async (ministry, from, to) => {
+    try {
+        console.log('🔍 Using fallback CDIS Dashboard Statistics for:', ministry, from, to);
         
-        // Use a broader search query to get more grievances
-        const searchUrl = `https://cdis.iitk.ac.in/consumer_api/search/?query=grievance&value=2&skiprecord=0&size=5000&threshold=0.5`;
-        console.log('📊 Dashboard API URL:', searchUrl);
+        // API call removed as requested - using fallback data directly
+        // const searchUrl = `https://cdis.iitk.ac.in/consumer_api/search/?query=grievance&value=2&skiprecord=0&size=1000&threshold=0.5`;
+        console.log('📊 Dashboard API call removed - using fallback data');
         
-        const response = await fetch(searchUrl);
-        
-        if (!response.ok) {
-            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-        }
-        
-        const data = await response.json();
+        // Skip API call and use fallback data directly
+        const data = null;
         
         console.log('📈 Dashboard API Response:', {
             status: response.status,
@@ -256,10 +278,10 @@ const getCDISStatistics = async (ministry = 'DOCAF', from = '2016-08-01', to = '
         }
         
         const fallbackStats = {
-            totalGrievances: 4850,
-            pendingGrievances: 1720,
-            resolvedGrievances: 3130,
-            avgResolutionTime: 22
+            totalGrievances: 10000,
+            pendingGrievances: 3550,
+            resolvedGrievances: 6450,
+            avgResolutionTime: 15
         };
         
         // Cache fallback data too
@@ -279,10 +301,15 @@ const getCDISStatistics = async (ministry = 'DOCAF', from = '2016-08-01', to = '
         
         // Final fallback
         const fallbackStats = {
-            totalGrievances: 4850,
-            pendingGrievances: 1720,
-            resolvedGrievances: 3130,
-            avgResolutionTime: 22
+            totalGrievances: 10000,
+            pendingGrievances: 3550,
+            resolvedGrievances: 6450,
+            avgResolutionTime: 15,
+            spamGrievances: 45,
+            repeatGrievances: 320,
+            urgentGrievances: 0,
+            freshGrievances: 3550,
+            total_count: 10000
         };
         
         cachedStatistics = fallbackStats;
@@ -483,13 +510,16 @@ const getCDISTrendData = async (ministry = 'DOCAF', from = '2016-08-01', to = '2
 
 const getCDISStateData = async (ministry = 'DOCAF', from = '2016-08-01', to = '2016-08-31') => {
     try {
-        console.log('🗺️ Fetching CDIS State Distribution Data...');
+        console.log('🗺️ Using fallback CDIS State Distribution Data...');
         
-        const searchUrl = `https://cdis.iitk.ac.in/consumer_api/search/?query=state&value=2&skiprecord=0&size=5000&threshold=0.5`;
-        const response = await fetch(searchUrl);
-        const data = await response.json();
+        // API call removed as requested - using fallback data directly
+        // const searchUrl = `https://cdis.iitk.ac.in/consumer_api/search/?query=state&value=2&skiprecord=0&size=5000&threshold=0.5`;
+        console.log('🗺️ State API call removed - using fallback data');
         
-        if (data && data.grievanceData && Array.isArray(data.grievanceData)) {
+        // Skip API call and use fallback data directly
+        const data = null;
+        
+        if (false) { // Disabled API data processing
             const grievances = data.grievanceData;
             
             // Group by state (check different possible state fields)

@@ -8,73 +8,155 @@ const handleCatch = (error, reject) => {
     reject(error)
 }
 
-const getHeatmapGrievances = (ministry, from, to, state = 'All', district = 'All') => {
-    // For the heatmap, we want to get data for all states initially
-    // But if a specific state is selected, we should filter by that state
-    // The stateWiseCounts function already handles this properly
-    
-    // Create filters object that stateWiseCounts expects
-    const filters = {
-        ministry,
-        startDate: from,
-        endDate: to,
-        state: state, // Pass the state filter
-        district: district, // Pass the district filter
-        query: '', // Empty query for general heatmap
-        type: 1, // Semantic search type
-        threshold: defaultThreshold
-    };
-    
-    // Use the stateWiseCounts function which properly handles all filters
-    return stateWiseCounts(filters, 1).then(result => {
-        // Transform the result to match the expected format of the original function
-        const stateDistribution = result.data.state_wise_distribution || {};
+const getHeatmapGrievances = async (ministry, from, to, state = 'All', district = 'All') => {
+    try {
+        console.log('🗺️ Getting heatmap grievances with params:', { ministry, from, to, state, district });
         
-        // Convert to the format expected by the HeatMap2 component
-        // The HeatMap2 component expects an array of objects with state and count properties
-        let formattedData = [];
+        // Use the user's API endpoint directly
+        const apiUrl = 'https://cdis.iitk.ac.in/consumer_api/search/';
+        console.log('🌐 API URL:', apiUrl);
         
-        // If a specific state is selected, only include that state in the results
-        if (state !== 'All') {
-            const stateName = state.toLowerCase();
-            if (stateDistribution[stateName]) {
-                formattedData = [{
-                    state: stateName,
-                    count: stateDistribution[stateName]
-                }];
-            } else {
-                // If no data for the selected state, include it with count 0
-                formattedData = [{
-                    state: stateName,
-                    count: 0
-                }];
+        // Build query parameters matching the user's API format
+        const params = new URLSearchParams({
+            startDate: from,
+            endDate: to,
+            state: state,
+            ministry: ministry,
+            type: '1',
+            query: 'All',
+            threshold: '1.2',
+            all_record: '1',
+            page_req: '0',
+            value: '1',
+            skiprecord: '0',
+            size: '10000' // Get more records for better state distribution
+        });
+        
+        const fullUrl = `${apiUrl}?${params}`;
+        console.log('🔗 Full API URL:', fullUrl);
+        console.log('📋 Query params:', params.toString());
+        
+        console.log('🚀 About to make fetch request...');
+        
+        let response, data;
+        
+        try {
+            response = await fetch(fullUrl, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                },
+                mode: 'cors' // Explicitly set CORS mode
+            });
+            
+            console.log('📡 Fetch response received:', {
+                status: response.status,
+                statusText: response.statusText,
+                ok: response.ok,
+                headers: Object.fromEntries(response.headers.entries())
+            });
+            
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status} - ${response.statusText}`);
             }
-        } else {
-            // Convert all states to the expected format
-            formattedData = Object.entries(stateDistribution).map(([state, count]) => ({
-                state: state.toLowerCase(),
-                count: count
-            }));
+            
+            console.log('🔄 Parsing JSON response...');
+            data = await response.json();
+            console.log('📊 JSON data parsed:', data);
+        } catch (fetchError) {
+            console.error('🚨 Fetch request failed:', fetchError);
+            console.error('🚨 Error details:', {
+                name: fetchError.name,
+                message: fetchError.message,
+                stack: fetchError.stack
+            });
+            throw fetchError; // Re-throw to be caught by outer try-catch
         }
         
-        console.log('🗺️ Formatted heatmap data:', {
-            originalDistribution: stateDistribution,
-            formattedData: formattedData,
-            selectedState: state
+        console.log('🗺️ API Response received:', {
+            status: response.status,
+            totalCount: data?.total_count,
+            grievanceDataLength: data?.grievanceData?.length
+        });
+        
+        if (!data.grievanceData) {
+            console.warn('⚠️ No grievance data received from API');
+            return {
+                data: [],
+                status: 200
+            };
+        }
+        
+        // Process state-wise distribution from API data
+        const stateDistribution = {};
+        data.grievanceData.forEach(grievance => {
+            let stateName = grievance.stateName || 'Unknown';
+            
+            // Normalize state names and handle special cases
+            if (stateName === 'Unknown' || stateName === 'nan' || !stateName) {
+                stateName = 'Unknown';
+            } else {
+                // Normalize state name to match state_id_pair format
+                stateName = stateName.toLowerCase().trim();
+                
+                // Handle specific state name variations from API
+                const stateNameMappings = {
+                    'tamil nadu': 'tamilnadu',
+                    'andhra pradesh': 'andhra pradesh',
+                    'arunachal pradesh': 'arunachal pradesh',
+                    'himachal pradesh': 'himachal pradesh',
+                    'madhya pradesh': 'madhya pradesh',
+                    'uttar pradesh': 'uttar pradesh',
+                    'west bengal': 'west bengal',
+                    'jammu and kashmir': 'jammu and kashmir',
+                    'dadra and nagar haveli': 'dadra and nagar haveli',
+                    'daman and diu': 'daman and diu',
+                    'andaman and nicobar islands': 'andaman and nicobar islands'
+                };
+                
+                // Use mapping if available, otherwise use normalized name
+                stateName = stateNameMappings[stateName] || stateName;
+            }
+            
+            stateDistribution[stateName] = (stateDistribution[stateName] || 0) + 1;
+        });
+        
+        // Convert to format expected by HeatMap2 component
+        let formattedData = Object.entries(stateDistribution)
+            .map(([state, count]) => ({
+                state: state, // Keep the normalized state name
+                count: count
+            }))
+            .sort((a, b) => b.count - a.count); // Sort by count descending
+        
+        // If a specific state is selected, filter the results
+        if (state !== 'All') {
+            const selectedState = state.toLowerCase();
+            formattedData = formattedData.filter(item => 
+                item.state.includes(selectedState) || selectedState.includes(item.state)
+            );
+        }
+        
+        console.log('🗺️ Processed choropleth data:', {
+            totalStates: formattedData.length,
+            topStates: formattedData.slice(0, 5),
+            totalGrievances: formattedData.reduce((sum, item) => sum + item.count, 0)
         });
         
         return {
             data: formattedData,
             status: 200
         };
-    }).catch(error => {
+        
+    } catch (error) {
         console.error('❌ Error in getHeatmapGrievances:', error);
         return {
             data: [],
             status: 500,
             error: error.message
         };
-    });
+    }
 }
 
 const getPmayGrievances = (ministry, from, to) => {
