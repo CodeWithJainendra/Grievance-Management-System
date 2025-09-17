@@ -1046,6 +1046,7 @@ const SpatialSearchButton = ({ onSearch }) => {
 // Simple Date Range Input Component
 const SpatialDateRangeInput = () => {
     const { filters, setFilters } = useFilter()
+    const { isDark } = useTheme()
     const [dateRange, setDateRange] = useState({
         startDate: null,
         endDate: null
@@ -1062,20 +1063,78 @@ const SpatialDateRangeInput = () => {
     }
 
     return (
-        <div className="w-full relative z-50">
-            <div className="bg-white border border-gray-300 rounded-lg shadow-sm">
+        <div className="w-full relative z-[9999]">
+            <div className={`border rounded-lg shadow-lg ${
+                isDark ? 'bg-gray-800 border-gray-600' : 'bg-white border-gray-300'
+            }`}>
                 <DateRangePicker
                     value={dateRange}
                     onChange={updateDateRange}
                     showShortcuts={true}
                     showFooter={true}
                     placeholder="Select Date Range"
-                    className="w-full p-3 bg-white border-0 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className={`w-full p-3 border-0 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                        isDark ? 'bg-gray-800 text-white' : 'bg-white text-gray-700'
+                    }`}
                     containerClassName="w-full"
-                    inputClassName="w-full p-3 text-sm text-gray-700 bg-white border-0 rounded-lg focus:outline-none"
+                    inputClassName={`w-full p-3 text-sm border-0 rounded-lg focus:outline-none ${
+                        isDark ? 'bg-gray-800 text-white placeholder-gray-400' : 'bg-white text-gray-700 placeholder-gray-500'
+                    }`}
                     popoverDirection="down"
+                    style={{
+                        '--tw-bg-opacity': '1',
+                        backgroundColor: isDark ? '#1f2937' : '#ffffff',
+                        color: isDark ? '#ffffff' : '#374151',
+                        borderColor: isDark ? '#4b5563' : '#d1d5db'
+                    }}
                 />
             </div>
+            <style jsx global>{`
+                .react-datepicker {
+                    background-color: ${isDark ? '#1f2937' : '#ffffff'} !important;
+                    border: 1px solid ${isDark ? '#4b5563' : '#d1d5db'} !important;
+                    border-radius: 8px !important;
+                    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05) !important;
+                    z-index: 9999 !important;
+                }
+                .react-datepicker__header {
+                    background-color: ${isDark ? '#374151' : '#f9fafb'} !important;
+                    border-bottom: 1px solid ${isDark ? '#4b5563' : '#e5e7eb'} !important;
+                    color: ${isDark ? '#ffffff' : '#111827'} !important;
+                }
+                .react-datepicker__day {
+                    color: ${isDark ? '#ffffff' : '#111827'} !important;
+                }
+                .react-datepicker__day:hover {
+                    background-color: ${isDark ? '#4b5563' : '#e5e7eb'} !important;
+                }
+                .react-datepicker__day--selected {
+                    background-color: #3b82f6 !important;
+                    color: white !important;
+                }
+                .react-datepicker__day--in-range {
+                    background-color: ${isDark ? '#1e40af' : '#dbeafe'} !important;
+                    color: ${isDark ? '#ffffff' : '#1e40af'} !important;
+                }
+                .react-datepicker__month-container {
+                    background-color: ${isDark ? '#1f2937' : '#ffffff'} !important;
+                }
+                .react-datepicker__navigation {
+                    border: none !important;
+                }
+                .react-datepicker__navigation-icon::before {
+                    border-color: ${isDark ? '#ffffff' : '#374151'} !important;
+                }
+                .react-datepicker__current-month {
+                    color: ${isDark ? '#ffffff' : '#111827'} !important;
+                }
+                .react-datepicker__day-name {
+                    color: ${isDark ? '#d1d5db' : '#6b7280'} !important;
+                }
+                .react-datepicker-popper {
+                    z-index: 9999 !important;
+                }
+            `}</style>
         </div>
     )
 }
