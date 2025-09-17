@@ -885,5 +885,26 @@ const dateRangeShortcuts = {
             start: setDayOfYear(subYears(new Date(), 1), 1),
             end: lastDayOfYear(subYears(new Date(), 1))
         }
+    },
+    last2Years: {
+        text: "Last 2 Years",
+        period: {
+            start: setDayOfYear(subYears(new Date(), 2), 1),
+            end: lastDayOfYear(subYears(new Date(), 1))
+        }
+    },
+    last3Years: {
+        text: "Last 3 Years",
+        period: {
+            start: setDayOfYear(subYears(new Date(), 3), 1),
+            end: lastDayOfYear(subYears(new Date(), 1))
+        }
+    },
+    last5Years: {
+        text: "Last 5 Years",
+        period: {
+            start: setDayOfYear(subYears(new Date(), 5), 1),
+            end: lastDayOfYear(subYears(new Date(), 1))
+        }
     }
 }
